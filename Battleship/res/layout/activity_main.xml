@@ -3,7 +3,34 @@
     android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/background1"
     tools:context="com.example.battleship.MainActivity"
-    tools:ignore="MergeRootFrame" />
+    tools:ignore="MergeRootFrame" >
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+        <Button
+            android:id="@+id/startBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="77dp"
+            android:onClick="main_start_btn"
+            android:text="@string/start" />
+
+        <Button
+            android:id="@+id/otherButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/startBtn"
+            android:onClick="different_btn"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="64dp"
+            android:text="@string/different" />
+
+    </RelativeLayout>
+
+</FrameLayout>
 
