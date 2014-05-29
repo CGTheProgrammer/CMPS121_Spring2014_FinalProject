@@ -236,6 +236,7 @@ int drawable abc_textfield_searchview_right_holo_dark 0x7f020055
 int drawable abc_textfield_searchview_right_holo_light 0x7f020056
 int drawable background1 0x7f020057
 int drawable ic_launcher 0x7f020058
+int drawable temp_boat 0x7f020059
 int id action_bar 0x7f05001c
 int id action_bar_activity_content 0x7f050015
 int id action_bar_container 0x7f05001b
@@ -333,9 +334,10 @@ int layout abc_search_dropdown_item_icons_2line 0x7f030015
 int layout abc_search_view 0x7f030016
 int layout abc_simple_decor 0x7f030017
 int layout activity_main 0x7f030018
-int layout options 0x7f030019
-int layout setup_game 0x7f03001a
-int layout support_simple_spinner_dropdown_item 0x7f03001b
+int layout attack_layout 0x7f030019
+int layout options 0x7f03001a
+int layout setup_game 0x7f03001b
+int layout support_simple_spinner_dropdown_item 0x7f03001c
 int menu main 0x7f0c0000
 int string Options 0x7f0a0013
 int string Setup 0x7f0a0015
