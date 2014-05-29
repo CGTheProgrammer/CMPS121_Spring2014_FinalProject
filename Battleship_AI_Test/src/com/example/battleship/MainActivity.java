@@ -11,6 +11,7 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -39,6 +40,7 @@ public class MainActivity extends ActionBarActivity {
 	public bView attack;
 	public int curView;
 	public boolean singlePlayer;
+	public AI ai;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -175,7 +177,7 @@ public class MainActivity extends ActionBarActivity {
     		canvas.drawRect(lx, ty, rx, by, paint);
     		paint.setColor(Color.BLACK);
     		paint.setTextSize(20);
-    		canvas.drawText("ATTACK!", rx/2, ((ty + by) / 2), paint);
+    		canvas.drawText("Go To ATTACK!", rx/2, ((ty + by) / 2), paint);
     		
     		
     		for(int i = 0; i < 10; i++){
@@ -238,32 +240,58 @@ public class MainActivity extends ActionBarActivity {
     		canvas.drawRect(lx, ty, rx, by, paint);
     		paint.setColor(Color.BLACK);
     		paint.setTextSize(20);
-    		canvas.drawText("Main", rx/2, ((ty + by) / 2), paint);
+    		canvas.drawText("Go To Main", rx/2, ((ty + by) / 2), paint);
     		
        		for(int i = 0; i < 10; i++){
     			for(int j = 0; j < 10; j++){
     				//Note this needs to be changed to bGraph once bGraph becomes a real thing (i.e. it is being initialized someplace)
-    				if(aGraph.graph[i][j].tag == "water" || aGraph.graph[i][j].tag == "boat" ){
-    					lx = i * (sizeX / 10);
-    					rx = lx + (sizeX / 10);
-    					by = j * (sizeY / 12);
-    					ty = by + (sizeY / 12);
-    		    		paint.setColor(Color.BLUE);
-    					canvas.drawRect(lx, ty, rx, by, paint);
-    				}
+    				if(singlePlayer){
+    					if(ai.aiGraph.graph[i][j].tag == "water" || ai.aiGraph.graph[i][j].tag == "boat" ){
+    						lx = i * (sizeX / 10);
+	    					rx = lx + (sizeX / 10);
+	    					by = j * (sizeY / 12);
+	    					ty = by + (sizeY / 12);
+	    		    		paint.setColor(Color.BLUE);
+	    					canvas.drawRect(lx, ty, rx, by, paint);
+	    				}
 
-    				//Note this needs to be changed to bGraph once bGraph becomes a real thing (i.e. it is being initialized someplace)
-    				if(aGraph.graph[i][j].state == 1){
-    					lx = i * (sizeX / 10);
-    					rx = lx + (sizeX / 10);
-    					by = j * (sizeY / 12);
-    					ty = by + (sizeY / 12);
-        				//Note this needs to be changed to bGraph once bGraph becomes a real thing (i.e. it is being initialized someplace)
-    					if(aGraph.graph[i][j].tag == "ship"){
-    						paint.setColor(Color.RED);
-    					}
-    					else{paint.setColor(Color.WHITE);}
-    					canvas.drawRect(lx, ty, rx, by, paint);
+	    				//Note this needs to be changed to bGraph once bGraph becomes a real thing (i.e. it is being initialized someplace)
+	    				if(ai.aiGraph.graph[i][j].state == 1){
+	    					lx = i * (sizeX / 10);
+	    					rx = lx + (sizeX / 10);
+	    					by = j * (sizeY / 12);
+	    					ty = by + (sizeY / 12);
+	        				//Note this needs to be changed to bGraph once bGraph becomes a real thing (i.e. it is being initialized someplace)
+	    					if(ai.aiGraph.graph[i][j].tag == "ship"){
+	    						paint.setColor(Color.RED);
+	    					}
+	    					else{paint.setColor(Color.WHITE);}
+	    					canvas.drawRect(lx, ty, rx, by, paint);
+	    				}
+    				}
+    				else{
+    					if(aGraph.graph[i][j].tag == "water" || aGraph.graph[i][j].tag == "boat" ){
+    						lx = i * (sizeX / 10);
+	    					rx = lx + (sizeX / 10);
+	    					by = j * (sizeY / 12);
+	    					ty = by + (sizeY / 12);
+	    		    		paint.setColor(Color.BLUE);
+	    					canvas.drawRect(lx, ty, rx, by, paint);
+	    				}
+
+	    				//Note this needs to be changed to bGraph once bGraph becomes a real thing (i.e. it is being initialized someplace)
+	    				if(aGraph.graph[i][j].state == 1){
+	    					lx = i * (sizeX / 10);
+	    					rx = lx + (sizeX / 10);
+	    					by = j * (sizeY / 12);
+	    					ty = by + (sizeY / 12);
+	        				//Note this needs to be changed to bGraph once bGraph becomes a real thing (i.e. it is being initialized someplace)
+	    					if(aGraph.graph[i][j].tag == "ship"){
+	    						paint.setColor(Color.RED);
+	    					}
+	    					else{paint.setColor(Color.WHITE);}
+	    					canvas.drawRect(lx, ty, rx, by, paint);
+	    				}
     				}
     			}
     		}
@@ -284,7 +312,7 @@ public class MainActivity extends ActionBarActivity {
 	public void setup_start_btn(View v){
 		curView = 2;
 		if(singlePlayer){
-			AI ai = new AI();
+			ai = new AI();
 			setContentView(game);
 		}
 		else{
@@ -338,6 +366,7 @@ public class MainActivity extends ActionBarActivity {
     		toast.show();
     	}
     	public boolean placeBoat(Boat boat, int x, int y){
+			Log.i("placeBoat","Start");
     		boolean success = true;
     		int dist_to_collision = 0;
     		for(int i = 0; i < boat.length; i++){
@@ -407,6 +436,7 @@ public class MainActivity extends ActionBarActivity {
     		}
     		//If there is a collision ensure that all the squares are reverted to being water
     		if(!success){
+    			Log.i("placeBoat","Bad Location");
 	    		for(int i = 0; i < dist_to_collision; i++){
 	    			if(graph[x][y].tag == "water"){
 	    				switch(boat.direction){
@@ -433,6 +463,7 @@ public class MainActivity extends ActionBarActivity {
 	    			}
 	    		}
     		}
+			Log.i("placeBoat","Finish");
     		return success;
     	}
     	
@@ -464,51 +495,70 @@ public class MainActivity extends ActionBarActivity {
     //Note that the AI only currently has 3 boats, this is because I could only think of the names of three of the boats
     //when I wrote this portion of the code, upon seeing this I would appreciate it if somebody remedied this small issue
     public class AI{
-    	Coord[] moves;
-    	Graph aiGraph;
+    	public Coord[] moves;
+    	public Graph aiGraph;
     	int boats_remaining;
     	Boat battle_ship;
     	Boat submarine;
     	Boat air_craft_carrier;
     	AI(){
     		//This segment is generating coordinates for the random moves
+    		Log.i("AI", "Constructing Moves");
     		moves = new Coord[100];
     		Random r = new Random();
     		int i, tempX, tempY;
     		i = 0;
     		boolean found;
+    		Log.i("AI", "Constructing Moves Loop Start");
     		while(i < 100){
     			found = false;
-    			tempX = (r.nextInt(9) + 0);
-    			tempY = (r.nextInt(9) + 0);
-    			for(int it = 0; it < i; it++){
+    			tempX = (r.nextInt(10) + 0);
+    			//Log.i("AI",String.valueOf(tempX));
+    			tempY = (r.nextInt(10) + 0);
+    			//Log.i("AI",String.valueOf(tempY));
+
+    			
+    			//This segment of code is meant to ensure that there are no repeats in generated coordinates
+    			//It is commented out at the moment because it is hanging for some reason
+    			/*for(int it = 0; it < i; it++){
     				if(moves[it].x == tempX && moves[it].y == tempY)
     					found = true;
-    			}
-    			if(!found)
+    			}*/
+    			if(!found){
+    				//Log.i("AI", "Constructing Moves Loop Placing");
+    				moves[i] = new Coord(tempX, tempY);
+    				//Log.i("AI", "Constructing Moves Loop Placed");
     				i++;
+    			}
     		}
     		//This segment of code is devoted to placing the AIs boats
+    		Log.i("AI", "Placing Boats");
     		boats_remaining = 5;
     		found = true;
 			//This array should have a length equal to the number of boats
 			boolean[] tempBools = new boolean[3];
 			for(int iterator = 0; iterator< 3; iterator++)
 				tempBools[iterator] = false;
+			Log.i("AI","Boat loop start");
     		while(found){
-    			if(tempBools[0]){
+    			if(!tempBools[0]){
+        			Log.i("AI","Attempting to make a boat");
     				battle_ship = new Boat(3,"battleship", r.nextInt(3) + 0);
     				tempX = (r.nextInt(3) + 0);
     				tempY = (r.nextInt(3) + 0);
+        			Log.i("AI","Now Placing Boat");
     				tempBools[0] = aiGraph.placeBoat(battle_ship, tempX, tempY);
+    				if(tempBools[0])
+    					Log.i("AI", "placeBoat Works");
+    				else{Log.i("AI","placeBoat kinda works");}
     			}
-    			if(tempBools[1]){
+    			if(!tempBools[1]){
     				tempX = (r.nextInt(3) + 0);
     				tempY = (r.nextInt(3) + 0);
     				submarine = new Boat(3, "submarine", 0);
     				tempBools[1] = aiGraph.placeBoat(submarine, tempX, tempY);
     			}
-    			if(tempBools[2]){
+    			if(!tempBools[2]){
     				tempX = (r.nextInt(3) + 0);
     				tempY = (r.nextInt(3) + 0);
     				air_craft_carrier = new Boat(5, "aircraftcarrier",0);
@@ -519,13 +569,14 @@ public class MainActivity extends ActionBarActivity {
     			if(tempBools[0] && tempBools[1] && tempBools[2])
     				found = false;
     		}
+    		Log.i("AI", "Finished");
     	}
     	
     }
     //A simple ADT that holds two integers
     public class Coord{
-    	int x;
-    	int y;
+    	public int x;
+    	public int y;
     	Coord(int x, int y){
     		this.x = x;
     		this.y = y;
