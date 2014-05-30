@@ -19,15 +19,24 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 
 public class MainActivity extends ActionBarActivity {
+<<<<<<< HEAD
 	
 	//##### GLOBAL VARIABLES ###//
+=======
+>>>>>>> CG
 	//The graph of the players area
 	public Graph aGraph;
 	public boolean[][] aAttacks;
 	//The graph of the opponents area
 	public Graph bGraph;
 	public boolean[][] bAttacks;
+<<<<<<< HEAD
 	//Screen size
+=======
+	
+	
+	
+>>>>>>> CG
 	public int sizeX, sizeY;
 	//The main menu
 	public View main;
@@ -35,7 +44,10 @@ public class MainActivity extends ActionBarActivity {
 	public aView game;
 	//The attack view
 	public bView attack;
+<<<<<<< HEAD
 	//Current View
+=======
+>>>>>>> CG
 	public int curView;
 	//Single Player boolean
 	public boolean singlePlayer;
@@ -62,9 +74,15 @@ public class MainActivity extends ActionBarActivity {
         	public boolean onTouch(View v, MotionEvent event){
         		
         		//Determining Which Square the user has clicked and marking it as clicked
+<<<<<<< HEAD
         		float y = (event.getY() / (sizeY / 15));
         		
         		//If you touch the bottom part of the screen, do this:
+=======
+        		float x =(event.getX() / (sizeX / 10));
+        		float y = (event.getY() / (sizeY / 12));
+        		
+>>>>>>> CG
         		if(y >= 10){
         			setContentView(attack);
         			curView = 3;
@@ -72,22 +90,32 @@ public class MainActivity extends ActionBarActivity {
         		return true;
         	}
         });
+<<<<<<< HEAD
         
         //Setting up the system that listens to touch for attack board
+=======
+>>>>>>> CG
         attack.setOnTouchListener(new View.OnTouchListener(){
         	@Override
         	public boolean onTouch(View v, MotionEvent event){
         		
         		//Determining Which Square the user has clicked and marking it as clicked
         		float x =(event.getX() / (sizeX / 10));
+<<<<<<< HEAD
         		float y = (event.getY() / (sizeY / 15));
+=======
+        		float y = (event.getY() / (sizeY / 12));
+>>>>>>> CG
         		
         		if(y < 10 && x < 10){
         			aGraph.touch((int)x,(int)y);
         			aAttacks[(int)x][(int)y] = true;
         	        attack.invalidate();
         		}
+<<<<<<< HEAD
         		// 
+=======
+>>>>>>> CG
         		else if(y >= 10){
         			setContentView(game);
         			curView = 3;
@@ -102,12 +130,22 @@ public class MainActivity extends ActionBarActivity {
         aAttacks = new boolean[10][10];
         bAttacks = new boolean[10][10];
         
+<<<<<<< HEAD
+=======
+        aAttacks = new boolean[10][10];
+        bAttacks = new boolean[10][10];
+        
+>>>>>>> CG
         for(int i = 0; i < 10; i++){
         	for(int j = 0; j < 10; j++){
         		aAttacks[i][j] = false;
         		bAttacks[i][j] = false;
         	}
         }
+<<<<<<< HEAD
+=======
+        
+>>>>>>> CG
         curView = 0;
     }
 
@@ -242,7 +280,85 @@ public class MainActivity extends ActionBarActivity {
     	protected void onDraw(Canvas canvas){
     		super.onDraw(canvas);
     		//If we want to have extra things drawn on the screen, this is where the code should go
+
+    		//This first segment is devoted to drawing the button at the bottom
+    		Paint paint = new Paint();
+    		paint.setStyle(Paint.Style.FILL);
+    		paint.setColor(Color.RED);
+    		float lx = 0;
+    		float rx = getWidth();
+    		float ty = getHeight();
+    		ty -= getHeight() / 12;
+    		float by = getHeight();
+    		canvas.drawRect(lx, ty, rx, by, paint);
+    		paint.setColor(Color.BLACK);
+    		paint.setTextSize(20);
+    		canvas.drawText("ATTACK!", rx/2, ((ty + by) / 2), paint);
     		
+    		
+    		for(int i = 0; i < 10; i++){
+    			for(int j = 0; j < 10; j++){
+    				if(aGraph.graph[i][j].tag == "water"){
+    					lx = i * (sizeX / 10);
+    					rx = lx + (sizeX / 10);
+    					by = j * (sizeY / 12);
+    					ty = by + (sizeY / 12);
+    		    		paint.setColor(Color.BLUE);
+    					canvas.drawRect(lx, ty, rx, by, paint);
+    				}
+    				else if(aGraph.graph[i][j].tag == "boat"){
+    					Bitmap boat = BitmapFactory.decodeResource(getResources(), R.drawable.temp_boat);
+    					canvas.drawBitmap(boat, 0, 0, paint);
+    				}
+    				if(aGraph.graph[i][j].state == 1){
+    					lx = i * (sizeX / 10);
+    					rx = lx + (sizeX / 10);
+    					by = j * (sizeY / 12);
+    					ty = by + (sizeY / 12);
+    					if(aGraph.graph[i][j].tag == "ship"){
+    						paint.setColor(Color.RED);
+    					}
+    					else{paint.setColor(Color.WHITE);}
+    					canvas.drawRect(lx, ty, rx, by, paint);
+    				}
+    			}
+    		}
+    	}
+	
+	}
+    
+    //The view class that is responsible for the attack screen
+    public class bView extends View{
+	    
+    	LinearLayout layout;
+    	Button attack;
+    	
+    	public bView(Context context){
+    		super(context);    		
+    		this.setBackgroundResource(R.drawable.background1);
+
+    	}
+	
+    	@Override
+    	protected void onDraw(Canvas canvas){
+    		super.onDraw(canvas);
+    		//If we want to have extra things drawn on the screen, this is where the code should go
+    		
+    		//This first segment is devoted to drawing the button at the bottom 
+    		Paint paint = new Paint();
+    		paint.setStyle(Paint.Style.FILL);
+    		paint.setColor(Color.RED);
+    		float lx = 0;
+    		float rx = getWidth();
+    		float ty = getHeight();
+    		ty -= getHeight() / 12;
+    		float by = getHeight();
+    		canvas.drawRect(lx, ty, rx, by, paint);
+    		paint.setColor(Color.BLACK);
+    		paint.setTextSize(20);
+    		canvas.drawText("Main", rx/2, ((ty + by) / 2), paint);
+    		
+<<<<<<< HEAD
     		//This first segment is devoted to drawing the button at the bottom 
     		paint.setStyle(Paint.Style.FILL);
     		paint.setColor(Color.RED);
@@ -267,11 +383,32 @@ public class MainActivity extends ActionBarActivity {
     					canvas.drawRect(lx, ty, rx, by, paint);
     				}
     				if(bGraph.graph[i][j].state == 1){
+=======
+       		for(int i = 0; i < 10; i++){
+    			for(int j = 0; j < 10; j++){
+    				//Note this needs to be changed to bGraph once bGraph becomes a real thing (i.e. it is being initialized someplace)
+    				if(aGraph.graph[i][j].tag == "water" || aGraph.graph[i][j].tag == "boat" ){
     					lx = i * (sizeX / 10);
     					rx = lx + (sizeX / 10);
     					by = j * (sizeY / 12);
     					ty = by + (sizeY / 12);
+    		    		paint.setColor(Color.BLUE);
+    					canvas.drawRect(lx, ty, rx, by, paint);
+    				}
+
+    				//Note this needs to be changed to bGraph once bGraph becomes a real thing (i.e. it is being initialized someplace)
+    				if(aGraph.graph[i][j].state == 1){
+>>>>>>> CG
+    					lx = i * (sizeX / 10);
+    					rx = lx + (sizeX / 10);
+    					by = j * (sizeY / 12);
+    					ty = by + (sizeY / 12);
+<<<<<<< HEAD
     					if(bGraph.graph[i][j].tag == "ship"){
+=======
+        				//Note this needs to be changed to bGraph once bGraph becomes a real thing (i.e. it is being initialized someplace)
+    					if(aGraph.graph[i][j].tag == "ship"){
+>>>>>>> CG
     						paint.setColor(Color.RED);
     					}
     					else{paint.setColor(Color.WHITE);}
@@ -350,7 +487,11 @@ public class MainActivity extends ActionBarActivity {
     //Sits in a graph, holds information
     public class Node{
     	int x,y;			//Coordinates of the node [0-9][0-9]
+<<<<<<< HEAD
     	int state;			//0 = Nothing; 1 = hit         
+=======
+    	int state;			//0 = Nothing, 1 = hit         I wanted this to be an int in case we get into complex types
+>>>>>>> CG
     	String tag;			//
     	public Node(int x, int y){
     		tag = "water";
