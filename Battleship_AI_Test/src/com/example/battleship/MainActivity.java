@@ -23,80 +23,65 @@ import android.widget.Toast;
 
 public class MainActivity extends ActionBarActivity {
 	//The graph of the players area
-	public Graph aGraph;
-	public boolean[][] aAttacks;
+	public Graph aGraph;									//A graph of the players ship positions
+	public boolean[][] aAttacks;							//A graph of the positions that the player has attacked
 	//The graph of the opponents area
-	public Graph bGraph;
-	public boolean[][] bAttacks;
-	public boolean canAttack;
+	public Graph bGraph;									//A graph of the opponents ship positions
+	public boolean[][] bAttacks;							//Keeps track of all of the attacks the opponent has made
+	public boolean canAttack;								//Determines whether or not it is the players turn
+	public int boats_remaining, op_boats_remaining;			//The number of undestroyed ships that the player currently has
 	
-	
-	public int sizeX, sizeY;
+	public int turn;
+	public int sizeX, sizeY;				//Integers that represent the size of the screen the app is being run on
 	//The main menu
-	public View main;
+	public View main;						//The main menu screen
 	//The main game area
-	public aView game;
+	public aView game;						//The main in game view the player sees when they are viewing their half of the board
 	//The attack view
-	public bView attack;
-	public int curView;
-	public boolean singlePlayer;
-	public AI ai;
+	public bView attack;					//The view the player sees when they are choosing the location for their attacks
+	//The place view
+	public placeView place;					//The view that allows the player to place their ships
+	
+	public int curView;						//Keeps track of which screen the user is currently on 0 = main menu, 2 = game
+	public boolean singlePlayer;			//Determines the source of the opponent (another player == false, AI == true) 
+	public AI ai;							//Artificial Intelligence that controls opponent during singlePlayer
+	public Boat[] boats;					//An array that stores all of the players boats
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         //This is where we are creating our view
-        singlePlayer = false;
         game = new aView(getApplicationContext());
         attack = new bView(getApplicationContext());
+        place = new placeView(getApplicationContext());
         setContentView(R.layout.activity_main);
+        
+        //Determining the size of the screen
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
         sizeX = size.x;
         sizeY = size.y;
-        //Setting up the system that senses 
-        game.setOnTouchListener(new View.OnTouchListener(){
-        	@Override
-        	public boolean onTouch(View v, MotionEvent event){
-        		
-        		//Determining Which Square the user has clicked and marking it as clicked
-        		float x =(event.getX() / (sizeX / 10));
-        		float y = (event.getY() / (sizeY / 12));
-        		
-        		if(y >= 10){
-        			setContentView(attack);
-        			curView = 3;
-        		}
-        		return true;
-        	}
-        });
-        attack.setOnTouchListener(new View.OnTouchListener(){
-        	@Override
-        	public boolean onTouch(View v, MotionEvent event){
-        		
-        		//Determining Which Square the user has clicked and marking it as clicked
-        		float x =(event.getX() / (sizeX / 10));
-        		float y = (event.getY() / (sizeY / 12));
-        		
-        		if(y < 10 && x < 10){
-        			aGraph.touch((int)x,(int)y);
-        			aAttacks[(int)x][(int)y] = true;
-        	        attack.invalidate();
-        		}
-        		else if(y >= 10){
-        			setContentView(game);
-        			curView = 3;
-        		}
-        		return true;
-        	}
-        });
-        //Creating the graph that tracks the back of the screen
+        
+        //Initializing variables
         aGraph = new Graph();
+        bGraph = new Graph();
         
         aAttacks = new boolean[10][10];
         bAttacks = new boolean[10][10];
+        
+        boats = new Boat[3];
+        boats[0] = new Boat(3, "battleship", 0);
+        boats[1] = new Boat(3, "submarine", 0);
+        boats[2] = new Boat(5, "aircraftcarrier", 0);
+        
+        singlePlayer = false;
+        boats_remaining = 5;
+        op_boats_remaining = 5;
+        
+        turn = 0;
+        curView = 0;
         
         for(int i = 0; i < 10; i++){
         	for(int j = 0; j < 10; j++){
@@ -105,8 +90,116 @@ public class MainActivity extends ActionBarActivity {
         	}
         }
         
-        curView = 0;
+        //Setting up the touch input for each of the views      
         
+        //Setting up the system that senses touch input for the game view
+        //Doesn't do that much as of 5-29-14 because there isn't much to be done
+        game.setOnTouchListener(new View.OnTouchListener(){
+        	@Override
+        	public boolean onTouch(View v, MotionEvent event){
+        		
+        		//Determining Which Square the user has clicked and marking it as clicked
+        		if(event.getAction() == MotionEvent.ACTION_DOWN){
+	
+	        		float y = (event.getY() / (sizeY / 12));
+	        		
+	        		//If the player pushes the button at the bottom of the screen, change view
+	        		if(y >= 10){
+	        			setContentView(attack);
+	        			curView = 3;
+	        		}
+	        		game.invalidate();
+        		}
+        		return true;
+        	}
+        });
+        
+        
+        //Setting up the system that senses touch input for the attack view
+        attack.setOnTouchListener(new View.OnTouchListener(){
+        	@Override
+        	public boolean onTouch(View v, MotionEvent event){
+        		
+        		//Determining Which Square the user has clicked and marking it as clicked
+        		if(event.getAction() == MotionEvent.ACTION_DOWN){
+	        		float x =(event.getX() / (sizeX / 10));
+	        		float y = (event.getY() / (sizeY / 12));
+	        		
+	        		//Enters new data in the aAttack array to denote that the player has attacked a square 
+	        		if(y < 10 && x < 10){
+	        			if(singlePlayer){
+	        				ai.aiGraph.touch((int)x, (int)y);
+	        				turn++;
+	        				bAttacks[ai.moves[turn-1].x][ai.moves[turn-1].y] = true;
+	        				//This is a temporary piece of code, it needs to be updated to handle boats of size greater than 1
+	        				if(ai.aiGraph.graph[(int)x][(int)y].tag == "boat")
+	        					ai.boats_remaining--;
+	        				if(aGraph.graph[ai.moves[turn-1].x][ai.moves[turn-1].y].tag == "boat")
+	        					boats_remaining--;
+	        			}
+	        			else{
+	        				bGraph.touch((int)x, (int)y);
+	        				turn++;
+	        				canAttack = false;
+	        			}
+	        			//////////////////////////////////////////////////////////////
+	        			///We need to add some logic here to handle the turn system///
+	        			//////////////////////////////////////////////////////////////
+	        			aAttacks[(int)x][(int)y] = true;
+	        		}
+	        		//If the player pushes the button at the bottom of the screen, change view
+	        		else if(y >= 10){
+	        			setContentView(game);
+	        			curView = 3;
+	        		}
+	    	        attack.invalidate();
+	        	}
+        		return true;
+        	}
+        });
+
+        place.setOnTouchListener(new View.OnTouchListener(){
+        	@Override
+        	public boolean onTouch(View v, MotionEvent event){
+        		//Finding the coordinates of the touch event
+        		if(event.getAction() == MotionEvent.ACTION_DOWN){
+	
+	        		float x =(event.getX() / (sizeX / 10));
+	        		float y = (event.getY() / (sizeY / 12));
+	        		
+	        		
+	        		//Determines which boat is being placed, I wish I could write this as a switch statement... but I can't
+	        		if(!boats[0].placed && aGraph.graph[(int)x][(int)y].tag == "water"){			//Placing Battleship
+	               		aGraph.graph[(int)x][(int)y].tag = "boat";
+	               		boats[0].pos = new Coord((int)x, (int)y);
+	               		boats[0].placed = true;
+	            		place.invalidate();
+	        		}
+	        		else if(!boats[1].placed && aGraph.graph[(int)x][(int)y].tag == "water"){		//Placing Submarine
+	        			aGraph.graph[(int)x][(int)y].tag = "boat";
+	               		boats[1].pos = new Coord((int)x, (int)y);
+	               		boats[1].placed = true;
+	            		place.invalidate();
+	        		}
+	        		else if(!boats[2].placed && aGraph.graph[(int)x][(int)y].tag == "water"){		//Placing Air Craft Carrier
+	        			aGraph.graph[(int)x][(int)y].tag = "boat";
+	               		boats[2].pos = new Coord((int)x, (int)y);
+	               		boats[2].placed = true;
+	            		place.invalidate();
+	
+	        		}
+	        		//Once all boats are placed, click anywhere to begin the game
+					//NOTE: May trigger approximately when last boat is placed because the input will still be detected
+	        		else if(boats[0].placed && boats[1].placed && boats[2].placed){
+	        			Log.i("GAME", "Launched");
+	        			setContentView(game);
+	        		}
+        		}
+        		
+        		return true;
+        	}
+        	
+        });
     }
 
     @Override
@@ -116,7 +209,9 @@ public class MainActivity extends ActionBarActivity {
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
-    
+
+    //Controls the functionality of the back button
+    //Controls the functionality of the Back Button
     @Override
     public void onBackPressed() {
 		if(curView == 0 || curView == 1){
@@ -144,15 +239,29 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
     
-    
+    public void checkWinner(){
+    	if(boats_remaining == 0)
+    		setContentView(R.layout.lose);
+    	if(singlePlayer)	
+    		if(ai.boats_remaining == 0)
+    			setContentView(R.layout.win);
+    	else{
+    		if(op_boats_remaining == 0)
+    			setContentView(R.layout.win);
+    	}
+    		
+    }
     //This is my view class that I created, it will allow us to dynamically determine our users screen size
     //and load the view accordingly.
     //Additionally this is necessary in order to do work on the canvas (the way that the background and sensor system is
     //currently working)
     public class aView extends View{
 	    
+    	//Initialization should be done before draw time to save computation
     	LinearLayout layout;
     	Button attack;
+    	Paint paint = new Paint();
+    	float lx, rx, ty, by;
     	
     	public aView(Context context){
     		super(context);    		
@@ -165,15 +274,18 @@ public class MainActivity extends ActionBarActivity {
     		super.onDraw(canvas);
     		//If we want to have extra things drawn on the screen, this is where the code should go
 
+
+    		
+    		checkWinner();
+    		
     		//This first segment is devoted to drawing the button at the bottom
-    		Paint paint = new Paint();
     		paint.setStyle(Paint.Style.FILL);
     		paint.setColor(Color.RED);
-    		float lx = 0;
-    		float rx = getWidth();
-    		float ty = getHeight();
+    		lx = 0;
+    		rx = getWidth();
+    		ty = getHeight();
     		ty -= getHeight() / 12;
-    		float by = getHeight();
+    		by = getHeight();
     		canvas.drawRect(lx, ty, rx, by, paint);
     		paint.setColor(Color.BLACK);
     		paint.setTextSize(20);
@@ -191,20 +303,36 @@ public class MainActivity extends ActionBarActivity {
     					canvas.drawRect(lx, ty, rx, by, paint);
     				}
     				else if(aGraph.graph[i][j].tag == "boat"){
-    					Bitmap boat = BitmapFactory.decodeResource(getResources(), R.drawable.temp_boat);
-    					canvas.drawBitmap(boat, 0, 0, paint);
+    					lx = i * (sizeX / 10);
+    					rx = lx + (sizeX / 10);
+    					by = j * (sizeY / 12);
+    					ty = by + (sizeY / 12);
+    					paint.setColor(Color.GREEN);
+    					canvas.drawRect(lx, ty, rx, by, paint);
     				}
     				if(aGraph.graph[i][j].state == 1){
     					lx = i * (sizeX / 10);
     					rx = lx + (sizeX / 10);
     					by = j * (sizeY / 12);
     					ty = by + (sizeY / 12);
-    					if(aGraph.graph[i][j].tag == "ship"){
+    					if(aGraph.graph[i][j].tag == "boat"){
     						paint.setColor(Color.RED);
     					}
     					else{paint.setColor(Color.WHITE);}
     					canvas.drawRect(lx, ty, rx, by, paint);
     				}
+    				if(bAttacks[i][j]){
+    					lx = i * (sizeX / 10);
+    					rx = lx + (sizeX / 10);
+    					by = j * (sizeY / 12);
+    					ty = by + (sizeY / 12);
+    					if(aGraph.graph[i][j].tag == "boat"){
+    						paint.setColor(Color.RED);
+    					}
+    					else{paint.setColor(Color.WHITE);}
+    					canvas.drawRect(lx, ty, rx, by, paint);
+    				}
+    					
     			}
     		}
     	}
@@ -228,6 +356,8 @@ public class MainActivity extends ActionBarActivity {
     		super.onDraw(canvas);
     		//If we want to have extra things drawn on the screen, this is where the code should go
     		
+    		checkWinner();
+    		
     		//This first segment is devoted to drawing the button at the bottom 
     		Paint paint = new Paint();
     		paint.setStyle(Paint.Style.FILL);
@@ -244,7 +374,6 @@ public class MainActivity extends ActionBarActivity {
     		
        		for(int i = 0; i < 10; i++){
     			for(int j = 0; j < 10; j++){
-    				//Note this needs to be changed to bGraph once bGraph becomes a real thing (i.e. it is being initialized someplace)
     				if(singlePlayer){
     					if(ai.aiGraph.graph[i][j].tag == "water" || ai.aiGraph.graph[i][j].tag == "boat" ){
     						lx = i * (sizeX / 10);
@@ -254,22 +383,32 @@ public class MainActivity extends ActionBarActivity {
 	    		    		paint.setColor(Color.BLUE);
 	    					canvas.drawRect(lx, ty, rx, by, paint);
 	    				}
-
-	    				//Note this needs to be changed to bGraph once bGraph becomes a real thing (i.e. it is being initialized someplace)
+    					
 	    				if(ai.aiGraph.graph[i][j].state == 1){
 	    					lx = i * (sizeX / 10);
 	    					rx = lx + (sizeX / 10);
 	    					by = j * (sizeY / 12);
 	    					ty = by + (sizeY / 12);
-	        				//Note this needs to be changed to bGraph once bGraph becomes a real thing (i.e. it is being initialized someplace)
+	    					
 	    					if(ai.aiGraph.graph[i][j].tag == "ship"){
 	    						paint.setColor(Color.RED);
 	    					}
 	    					else{paint.setColor(Color.WHITE);}
 	    					canvas.drawRect(lx, ty, rx, by, paint);
 	    				}
+	    				
+	    				//This needs to be taken out, but it is useful for testing
+	    				if(ai.aiGraph.graph[i][j].tag == "boat"){
+    						lx = i * (sizeX / 10);
+	    					rx = lx + (sizeX / 10);
+	    					by = j * (sizeY / 12);
+	    					ty = by + (sizeY / 12);
+	    		    		paint.setColor(Color.GREEN);
+	    					canvas.drawRect(lx, ty, rx, by, paint);
+	    				}
     				}
     				else{
+        				//Note this needs to be changed to bGraph once bGraph becomes a real thing (i.e. it is being initialized someplace)
     					if(aGraph.graph[i][j].tag == "water" || aGraph.graph[i][j].tag == "boat" ){
     						lx = i * (sizeX / 10);
 	    					rx = lx + (sizeX / 10);
@@ -293,11 +432,85 @@ public class MainActivity extends ActionBarActivity {
 	    					canvas.drawRect(lx, ty, rx, by, paint);
 	    				}
     				}
+    				if(aAttacks[i][j]){
+    					lx = i * (sizeX / 10);
+    					rx = lx + (sizeX / 10);
+    					by = j * (sizeY / 12);
+    					ty = by + (sizeY / 12);
+    					if(singlePlayer){
+    						if(ai.aiGraph.graph[i][j].tag == "boat")
+    							paint.setColor(Color.RED);
+    						else{paint.setColor(Color.WHITE);}
+    					}
+    					else{
+    						if(ai.aiGraph.graph[i][j].tag == "boat")
+    							paint.setColor(Color.RED);
+    						else{paint.setColor(Color.WHITE);}
+    					}
+    					canvas.drawRect(lx, ty, rx, by, paint);
+    				}
     			}
     		}
     	}
 	
 	}
+    
+    
+   public class placeView extends View{
+	    
+    	LinearLayout layout;
+    	Button attack;
+    	
+    	public placeView(Context context){
+    		super(context);    		
+    		this.setBackgroundResource(R.drawable.background1);
+
+    	}
+	
+    	@Override
+    	protected void onDraw(Canvas canvas){
+    		super.onDraw(canvas);
+    		//If we want to have extra things drawn on the screen, this is where the code should go
+    		    		
+    		//This first segment is devoted to drawing the button at the bottom 
+    		Paint paint = new Paint();
+    		paint.setStyle(Paint.Style.FILL);
+    		paint.setColor(Color.RED);
+    		float lx = 0;
+    		float rx = getWidth();
+    		float ty = getHeight();
+    		ty -= getHeight() / 12;
+    		float by = getHeight();
+    		canvas.drawRect(lx, ty, rx, by, paint);
+    		paint.setColor(Color.BLACK);
+    		paint.setTextSize(100);
+    		canvas.drawText("Place your Battleships!", rx/2, getHeight() / 2, paint);
+    		
+       		for(int i = 0; i < 10; i++){
+    			for(int j = 0; j < 10; j++){
+    				if(aGraph.graph[i][j].tag == "water"){
+    					lx = i * (sizeX / 10);
+    					rx = lx + (sizeX / 10);
+    					by = j * (sizeY / 12);
+    					ty = by + (sizeY / 12);
+    		    		paint.setColor(Color.BLUE);
+    					canvas.drawRect(lx, ty, rx, by, paint);
+    				}
+    				else if(aGraph.graph[i][j].tag == "boat"){
+    					lx = i * (sizeX / 10);
+    					rx = lx + (sizeX / 10);
+    					by = j * (sizeY / 12);
+    					ty = by + (sizeY / 12);
+    		    		paint.setColor(Color.GREEN);
+    					canvas.drawRect(lx, ty, rx, by, paint);
+    				}
+    			}
+    		}
+    	}
+	
+	}
+    
+    
     ////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////
     ///////////Creating Functions that correspond to various buttons////////////////////////
@@ -313,10 +526,10 @@ public class MainActivity extends ActionBarActivity {
 		curView = 2;
 		if(singlePlayer){
 			ai = new AI();
-			setContentView(game);
+			setContentView(place);
 		}
 		else{
-			setContentView(game);
+			setContentView(place);
 		}
 	}
 
@@ -368,7 +581,7 @@ public class MainActivity extends ActionBarActivity {
     	public boolean placeBoat(Boat boat, int x, int y){
 			Log.i("placeBoat","Start");
     		boolean success = true;
-    		int dist_to_collision = 0;
+    		/*int dist_to_collision = 0;
     		for(int i = 0; i < boat.length; i++){
     			if(graph[x][y].tag == "water"){
     				switch(boat.direction){
@@ -463,7 +676,7 @@ public class MainActivity extends ActionBarActivity {
 	    			}
 	    		}
     		}
-			Log.i("placeBoat","Finish");
+			Log.i("placeBoat","Finish");*/
     		return success;
     	}
     	
@@ -501,9 +714,12 @@ public class MainActivity extends ActionBarActivity {
     	Boat battle_ship;
     	Boat submarine;
     	Boat air_craft_carrier;
+    	
+    	//Constructor
     	AI(){
     		//This segment is generating coordinates for the random moves
     		Log.i("AI", "Constructing Moves");
+    		aiGraph = new Graph();
     		moves = new Coord[100];
     		Random r = new Random();
     		int i, tempX, tempY;
@@ -533,42 +749,59 @@ public class MainActivity extends ActionBarActivity {
     		}
     		//This segment of code is devoted to placing the AIs boats
     		Log.i("AI", "Placing Boats");
-    		boats_remaining = 5;
-    		found = true;
-			//This array should have a length equal to the number of boats
-			boolean[] tempBools = new boolean[3];
-			for(int iterator = 0; iterator< 3; iterator++)
-				tempBools[iterator] = false;
-			Log.i("AI","Boat loop start");
-    		while(found){
-    			if(!tempBools[0]){
-        			Log.i("AI","Attempting to make a boat");
-    				battle_ship = new Boat(3,"battleship", r.nextInt(3) + 0);
-    				tempX = (r.nextInt(3) + 0);
-    				tempY = (r.nextInt(3) + 0);
-        			Log.i("AI","Now Placing Boat");
-    				tempBools[0] = aiGraph.placeBoat(battle_ship, tempX, tempY);
-    				if(tempBools[0])
-    					Log.i("AI", "placeBoat Works");
-    				else{Log.i("AI","placeBoat kinda works");}
-    			}
-    			if(!tempBools[1]){
-    				tempX = (r.nextInt(3) + 0);
-    				tempY = (r.nextInt(3) + 0);
-    				submarine = new Boat(3, "submarine", 0);
-    				tempBools[1] = aiGraph.placeBoat(submarine, tempX, tempY);
-    			}
-    			if(!tempBools[2]){
-    				tempX = (r.nextInt(3) + 0);
-    				tempY = (r.nextInt(3) + 0);
-    				air_craft_carrier = new Boat(5, "aircraftcarrier",0);
-    				tempBools[2] = aiGraph.placeBoat(air_craft_carrier, tempX, tempY);
-    			}
-    			
-    			
-    			if(tempBools[0] && tempBools[1] && tempBools[2])
-    				found = false;
-    		}
+    		boats_remaining = 5;			
+			
+			for(int it = 0; i < 10; i++){
+				for(int j = 0; j < 10; j++){
+					aiGraph.graph[it][j] = new Node(it, j);
+				}
+			}
+			
+
+   			//Generating a random position for the battle_ship
+       		Log.i("AI","Attempting to make a boat");
+    			battle_ship = new Boat(3,"battleship", r.nextInt(3) + 0);
+   			tempX = (r.nextInt(3) + 0);
+   			tempY = (r.nextInt(3) + 0);
+       		Log.i("AI","Now Placing Boat");
+   			//tempBools[0] = aiGraph.placeBoat(battle_ship, tempX, tempY);
+       		//This is a temporary fix
+       		while(aiGraph.graph[tempX][tempY].tag == "boat"){
+       			tempX = (r.nextInt(3) + 0);
+       			tempY = (r.nextInt(3) + 0);	
+       		}
+       		aiGraph.graph[tempX][tempY].tag = "boat";
+       		battle_ship.pos = new Coord(tempX, tempY);
+       			
+   			
+   			//Generating a random position for the submarine
+   			tempX = (r.nextInt(3) + 0);
+   			tempY = (r.nextInt(3) + 0);
+   			submarine = new Boat(3, "submarine", 0);
+   			//tempBools[1] = aiGraph.placeBoat(submarine, tempX, tempY);
+   			
+       		while(aiGraph.graph[tempX][tempY].tag == "boat"){
+       			tempX = (r.nextInt(3) + 0);
+       			tempY = (r.nextInt(3) + 0);	
+       		}
+   			aiGraph.graph[tempX][tempY].tag = "boat";
+   			submarine.pos = new Coord(tempX, tempY);
+   			
+   			
+   			//Generating a random position for the Air Craft Carrier
+   			tempX = (r.nextInt(3) + 0);
+   			tempY = (r.nextInt(3) + 0);
+   			air_craft_carrier = new Boat(5, "aircraftcarrier",0);
+   			//tempBools[2] = aiGraph.placeBoat(air_craft_carrier, tempX, tempY);
+   			
+       		while(aiGraph.graph[tempX][tempY].tag == "boat"){
+       			tempX = (r.nextInt(3) + 0);
+       			tempY = (r.nextInt(3) + 0);	
+      		}
+			aiGraph.graph[tempX][tempY].tag = "boat";
+			air_craft_carrier.pos = new Coord(tempX, tempY);
+			
+			
     		Log.i("AI", "Finished");
     	}
     	
@@ -593,10 +826,15 @@ public class MainActivity extends ActionBarActivity {
     	int length;										//How many squares the boat occupies
     	String type;									//What type of ship is this? Battleship? Submarine? etc...
     	int direction;									//Which direction is the ship facing 0 = up, 1 = right, 2 = down, 3 = left 
+    	int hits_till_sunk;								//The number of shots remaining until the boat sinks
+    	Coord pos;
+    	boolean placed;
     	Boat(int length, String type, int direction){
     		this.length = length;
+    		placed = false;
     		this.type = type;
     		this.direction = direction;
+    		this.hits_till_sunk = length;
     	}
     }
 }
