@@ -77,7 +77,11 @@ public class MainActivity extends ActionBarActivity {
         boats[2] = new Boat(5, "aircraftcarrier", 0);
         
         singlePlayer = false;
-        boats_remaining = 5;
+        
+		/////////////////////////////////////////////////////////////////////////////////
+		//NOTE: THIS NEEDS TO BE CHANGED TO 17 WHEN THERE ARE 5 BOATS IN THE GAME////////
+		/////////////////////////////////////////////////////////////////////////////////
+        boats_remaining = 11;
         op_boats_remaining = 5;
         
         turn = 0;
@@ -131,11 +135,14 @@ public class MainActivity extends ActionBarActivity {
 	        				ai.aiGraph.touch((int)x, (int)y);
 	        				turn++;
 	        				bAttacks[ai.moves[turn-1].x][ai.moves[turn-1].y] = true;
+	        				//////////////////////////////////////////////////////////////////////////////////////////////////
 	        				//This is a temporary piece of code, it needs to be updated to handle boats of size greater than 1
+	        				//////////////////////////////////////////////////////////////////////////////////////////////////
 	        				if(ai.aiGraph.graph[(int)x][(int)y].tag == "boat")
 	        					ai.boats_remaining--;
 	        				if(aGraph.graph[ai.moves[turn-1].x][ai.moves[turn-1].y].tag == "boat")
 	        					boats_remaining--;
+	        				setContentView(game);
 	        			}
 	        			else{
 	        				bGraph.touch((int)x, (int)y);
@@ -170,21 +177,17 @@ public class MainActivity extends ActionBarActivity {
 	        		
 	        		//Determines which boat is being placed, I wish I could write this as a switch statement... but I can't
 	        		if(!boats[0].placed && aGraph.graph[(int)x][(int)y].tag == "water"){			//Placing Battleship
-	               		aGraph.graph[(int)x][(int)y].tag = "boat";
-	               		boats[0].pos = new Coord((int)x, (int)y);
-	               		boats[0].placed = true;
+	        			boats[0].placed = aGraph.placeBoat(boats[0], (int)x, (int)y);
 	            		place.invalidate();
 	        		}
 	        		else if(!boats[1].placed && aGraph.graph[(int)x][(int)y].tag == "water"){		//Placing Submarine
-	        			aGraph.graph[(int)x][(int)y].tag = "boat";
-	               		boats[1].pos = new Coord((int)x, (int)y);
-	               		boats[1].placed = true;
+
+	        			boats[1].placed = aGraph.placeBoat(boats[1], (int)x, (int)y);
 	            		place.invalidate();
 	        		}
 	        		else if(!boats[2].placed && aGraph.graph[(int)x][(int)y].tag == "water"){		//Placing Air Craft Carrier
-	        			aGraph.graph[(int)x][(int)y].tag = "boat";
-	               		boats[2].pos = new Coord((int)x, (int)y);
-	               		boats[2].placed = true;
+
+	        			boats[2].placed = aGraph.placeBoat(boats[2], (int)x, (int)y);
 	            		place.invalidate();
 	
 	        		}
@@ -581,65 +584,36 @@ public class MainActivity extends ActionBarActivity {
     	public boolean placeBoat(Boat boat, int x, int y){
 			Log.i("placeBoat","Start");
     		boolean success = true;
-    		/*int dist_to_collision = 0;
+    		
+    		boolean[] valid = new boolean[boat.length];
+    		
     		for(int i = 0; i < boat.length; i++){
     			if(graph[x][y].tag == "water"){
+    				valid[i] = false;
     				switch(boat.direction){
     					case 0:						//Direction = UP
-    						if((y - i) > 0){
+    						if((y - i) >= 0){
     							if(graph[x][y-i].tag == "water")
-    								graph[x][y-i].tag = "boat";
-    							else{
-    								success = false;
-    								dist_to_collision = i;
-    							}
+    								valid[i] = true;
     						}
-    						else{
-								success = false;
-								dist_to_collision = i;
-							}
     						break;
     					case 1:						//Direction = RIGHT
     						if((x + i) < 10){
     							if(graph[x + i][y].tag == "water")
-    								graph[x + i][y].tag = "boat";
-    							else{
-    								success = false;
-    								dist_to_collision = i;
-    							}
+    								valid[i] = true;
     						}
-    						else{
-								success = false;
-								dist_to_collision = i;
-							}
     						break;
     					case 2:						//Direction = DOWN
     						if((y + i) < 10){
     							if(graph[x][y + i].tag == "water")
-    								graph[x][y + i].tag = "boat";
-    							else{
-    								success = false;
-    								dist_to_collision = i;
-    							}
+    								valid[i] = true;
     						}
-    						else{
-								success = false;
-								dist_to_collision = i;
-							}
     						break;
     					case 3:						//Direction = LEFT
-    						if((x - i) > 0){
+    						if((x - i) >= 0){
     							if(graph[x - i][y].tag == "water")
-    								graph[x - i][y].tag = "boat";
-    							else{
-    								success = false;
-    								dist_to_collision = i;
-    							}
+    								valid[i] = true;
     						}
-    						else{
-								success = false;
-								dist_to_collision = i;
-							}
     						break;
     					default:
     						System.out.println("You've been Trolled");
@@ -647,36 +621,38 @@ public class MainActivity extends ActionBarActivity {
     				}
     			}
     		}
+    		for(int i = 0; i < boat.length; i++){
+    			if(!valid[i])
+    				success = false;
+    			else{Log.i("placeBoat","Bad Location");}
+    		}
     		//If there is a collision ensure that all the squares are reverted to being water
-    		if(!success){
-    			Log.i("placeBoat","Bad Location");
-	    		for(int i = 0; i < dist_to_collision; i++){
-	    			if(graph[x][y].tag == "water"){
-	    				switch(boat.direction){
-	    					case 0:						//Direction = UP
-	    						if((y - i) > 0)
-	    							graph[x][y-i].tag = "water";
-	    						break;
-	    					case 1:						//Direction = RIGHT
-	    						if((x + i) < 10)
-	    							graph[x + i][y].tag = "water";
-	    						break;
-	    					case 2:						//Direction = DOWN
-	    						if((y + i) < 10)
-	    							graph[x][y + i].tag = "water";
-	    						break;
-	    					case 3:						//Direction = LEFT
-	    						if((x - i) > 0)
-	    							graph[x - i][y].tag = "water";
-	    						break;
-	    					default:
-	    						System.out.println("You've been Trolled");
-	    						break;
-	    				}
+    		if(success){
+	    		for(int i = 0; i < boat.length; i++){
+	    			String tempStr = "Boat Piece: " + String.valueOf(i);
+	    			Log.i("placeBoat", tempStr);
+	    			switch(boat.direction){
+	    				case 0:						//Direction = UP
+	    					graph[x][y-i].tag = "boat";
+	    					tempStr = "Boat Piece: " + String.valueOf(i) + " placed";
+	    		    		Log.i("placeBoat", tempStr);
+	    					break;
+	    				case 1:						//Direction = RIGHT
+	    					graph[x + i][y].tag = "boat";
+	    					break;
+	    				case 2:						//Direction = DOWN
+	    					graph[x][y + i].tag = "boat";
+	    					break;
+	    				case 3:						//Direction = LEFT
+	    					graph[x - i][y].tag = "boat";
+	    					break;
+	    				default:
+	    					System.out.println("You've been Trolled");
+	    					break;
 	    			}
 	    		}
     		}
-			Log.i("placeBoat","Finish");*/
+			Log.i("placeBoat","Finish");
     		return success;
     	}
     	
@@ -749,7 +725,11 @@ public class MainActivity extends ActionBarActivity {
     		}
     		//This segment of code is devoted to placing the AIs boats
     		Log.i("AI", "Placing Boats");
-    		boats_remaining = 5;			
+    		
+    		/////////////////////////////////////////////////////////////////////////////////
+    		//NOTE: THIS NEEDS TO BE CHANGED TO 17 WHEN THERE ARE 5 BOATS IN THE GAME////////
+    		/////////////////////////////////////////////////////////////////////////////////
+    		boats_remaining = 3;			
 			
 			for(int it = 0; i < 10; i++){
 				for(int j = 0; j < 10; j++){
@@ -760,46 +740,31 @@ public class MainActivity extends ActionBarActivity {
 
    			//Generating a random position for the battle_ship
        		Log.i("AI","Attempting to make a boat");
-    			battle_ship = new Boat(3,"battleship", r.nextInt(3) + 0);
-   			tempX = (r.nextInt(3) + 0);
-   			tempY = (r.nextInt(3) + 0);
-       		Log.i("AI","Now Placing Boat");
-   			//tempBools[0] = aiGraph.placeBoat(battle_ship, tempX, tempY);
-       		//This is a temporary fix
-       		while(aiGraph.graph[tempX][tempY].tag == "boat"){
-       			tempX = (r.nextInt(3) + 0);
-       			tempY = (r.nextInt(3) + 0);	
+    		battle_ship = new Boat(3,"battleship", r.nextInt(3) + 0);	
+       		while(!battle_ship.placed){
+       			tempX = (r.nextInt(9) + 0);
+   				tempY = (r.nextInt(9) + 0);
+   				battle_ship.placed = aiGraph.placeBoat(battle_ship, tempX, tempY);
        		}
-       		aiGraph.graph[tempX][tempY].tag = "boat";
-       		battle_ship.pos = new Coord(tempX, tempY);
-       			
-   			
+
    			//Generating a random position for the submarine
-   			tempX = (r.nextInt(3) + 0);
-   			tempY = (r.nextInt(3) + 0);
-   			submarine = new Boat(3, "submarine", 0);
-   			//tempBools[1] = aiGraph.placeBoat(submarine, tempX, tempY);
-   			
-       		while(aiGraph.graph[tempX][tempY].tag == "boat"){
-       			tempX = (r.nextInt(3) + 0);
-       			tempY = (r.nextInt(3) + 0);	
-       		}
-   			aiGraph.graph[tempX][tempY].tag = "boat";
-   			submarine.pos = new Coord(tempX, tempY);
-   			
+       		
+   			submarine = new Boat(3, "submarine", r.nextInt(3) + 0);		
+   			while(!submarine.placed){
+       			tempX = (r.nextInt(9) + 0);
+   				tempY = (r.nextInt(9) + 0);
+   				submarine.placed = aiGraph.placeBoat(submarine, tempX, tempY);
+   			}
    			
    			//Generating a random position for the Air Craft Carrier
-   			tempX = (r.nextInt(3) + 0);
-   			tempY = (r.nextInt(3) + 0);
-   			air_craft_carrier = new Boat(5, "aircraftcarrier",0);
-   			//tempBools[2] = aiGraph.placeBoat(air_craft_carrier, tempX, tempY);
+   			air_craft_carrier = new Boat(5, "aircraftcarrier", r.nextInt(3) + 0);
+
    			
-       		while(aiGraph.graph[tempX][tempY].tag == "boat"){
-       			tempX = (r.nextInt(3) + 0);
-       			tempY = (r.nextInt(3) + 0);	
-      		}
-			aiGraph.graph[tempX][tempY].tag = "boat";
-			air_craft_carrier.pos = new Coord(tempX, tempY);
+   			while(!air_craft_carrier.placed){
+       			tempX = (r.nextInt(9) + 0);
+   				tempY = (r.nextInt(9) + 0);
+   				air_craft_carrier.placed = aiGraph.placeBoat(air_craft_carrier, tempX, tempY);
+   			}
 			
 			
     		Log.i("AI", "Finished");
