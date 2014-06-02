@@ -42,7 +42,6 @@
             android:id="@+id/singlePlayer_checkBox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_above="@+id/button1"
             android:layout_centerHorizontal="true"
             android:layout_marginBottom="64dp"
             android:onClick="options_single_player"
