@@ -4,7 +4,6 @@ import java.util.Random;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -46,6 +45,7 @@ public class MainActivity extends ActionBarActivity {
 	public boolean singlePlayer;			//Determines the source of the opponent (another player == false, AI == true) 
 	public AI ai;							//Artificial Intelligence that controls opponent during singlePlayer
 	public Boat[] boats;					//An array that stores all of the players boats
+	Canvas canvas;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +77,8 @@ public class MainActivity extends ActionBarActivity {
         boats[2] = new Boat(5, "aircraftcarrier", 0);
         
         singlePlayer = false;
+        
+        canvas = new Canvas(Bitmap.createBitmap(sizeX,sizeY,Bitmap.Config.ARGB_8888));
         
 		/////////////////////////////////////////////////////////////////////////////////
 		//NOTE: THIS NEEDS TO BE CHANGED TO 17 WHEN THERE ARE 5 BOATS IN THE GAME////////
@@ -111,6 +113,7 @@ public class MainActivity extends ActionBarActivity {
 	        		if(y >= 10){
 	        			setContentView(attack);
 	        			curView = 3;
+	        			attack.draw(canvas);
 	        		}
 	        		game.invalidate();
         		}
@@ -158,6 +161,7 @@ public class MainActivity extends ActionBarActivity {
 	        		else if(y >= 10){
 	        			setContentView(game);
 	        			curView = 3;
+	        			game.draw(canvas);
 	        		}
 	    	        attack.invalidate();
 	        	}
@@ -197,6 +201,7 @@ public class MainActivity extends ActionBarActivity {
 		        		else if(boats[0].placed && boats[1].placed && boats[2].placed){
 		        			Log.i("GAME", "Launched");
 		        			setContentView(game);
+		        			game.draw(canvas);
 		        		}
 		        	}
 		        	else{
@@ -557,6 +562,7 @@ public class MainActivity extends ActionBarActivity {
 		if(singlePlayer){
 			ai = new AI();
 			setContentView(place);
+			place.draw(canvas);
 		}
 		else{
 			setContentView(place);
@@ -760,7 +766,7 @@ public class MainActivity extends ActionBarActivity {
     		/////////////////////////////////////////////////////////////////////////////////
     		//NOTE: THIS NEEDS TO BE CHANGED TO 17 WHEN THERE ARE 5 BOATS IN THE GAME////////
     		/////////////////////////////////////////////////////////////////////////////////
-    		boats_remaining = 3;			
+    		boats_remaining = 11;			
 			
 			for(int it = 0; i < 10; i++){
 				for(int j = 0; j < 10; j++){
