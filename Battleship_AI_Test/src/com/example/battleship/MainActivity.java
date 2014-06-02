@@ -176,27 +176,54 @@ public class MainActivity extends ActionBarActivity {
 	        		
 	        		
 	        		//Determines which boat is being placed, I wish I could write this as a switch statement... but I can't
-	        		if(!boats[0].placed && aGraph.graph[(int)x][(int)y].tag == "water"){			//Placing Battleship
-	        			boats[0].placed = aGraph.placeBoat(boats[0], (int)x, (int)y);
-	            		place.invalidate();
-	        		}
-	        		else if(!boats[1].placed && aGraph.graph[(int)x][(int)y].tag == "water"){		//Placing Submarine
-
-	        			boats[1].placed = aGraph.placeBoat(boats[1], (int)x, (int)y);
-	            		place.invalidate();
-	        		}
-	        		else if(!boats[2].placed && aGraph.graph[(int)x][(int)y].tag == "water"){		//Placing Air Craft Carrier
-
-	        			boats[2].placed = aGraph.placeBoat(boats[2], (int)x, (int)y);
-	            		place.invalidate();
+		        	if(y < 10){
+		        		if(!boats[0].placed && aGraph.graph[(int)x][(int)y].tag == "water"){			//Placing Battleship
+		        			boats[0].placed = aGraph.placeBoat(boats[0], (int)x, (int)y);
+		            		place.invalidate();
+		        		}
+		        		else if(!boats[1].placed && aGraph.graph[(int)x][(int)y].tag == "water"){		//Placing Submarine
 	
-	        		}
-	        		//Once all boats are placed, click anywhere to begin the game
-					//NOTE: May trigger approximately when last boat is placed because the input will still be detected
-	        		else if(boats[0].placed && boats[1].placed && boats[2].placed){
-	        			Log.i("GAME", "Launched");
-	        			setContentView(game);
-	        		}
+		        			boats[1].placed = aGraph.placeBoat(boats[1], (int)x, (int)y);
+		            		place.invalidate();
+		        		}
+		        		else if(!boats[2].placed && aGraph.graph[(int)x][(int)y].tag == "water"){		//Placing Air Craft Carrier
+	
+		        			boats[2].placed = aGraph.placeBoat(boats[2], (int)x, (int)y);
+		            		place.invalidate();
+		
+		        		}
+		        		//Once all boats are placed, click anywhere to begin the game
+						//NOTE: May trigger approximately when last boat is placed because the input will still be detected
+		        		else if(boats[0].placed && boats[1].placed && boats[2].placed){
+		        			Log.i("GAME", "Launched");
+		        			setContentView(game);
+		        		}
+		        	}
+		        	else{
+		        		x = event.getX();
+		        		if(x >= (sizeX / 2)){
+		        			Log.i("Rotate","Turning Right");
+		        			int i = 0;
+		        			while(boats[i].placed && i < 3)
+		        				i++;
+		        			if(i >= 3)
+		        				return false;
+		        			boats[i].direction++;
+		        			if(boats[i].direction >= 4)
+		        				boats[i].direction = 0;		        		}
+		        		else{
+		        			Log.i("Rotate","Turning Left");
+		        			int i = 0;
+		        			while(boats[i].placed && i < 3)
+		        				i++;
+		        			if(i >= 3)
+		        				return false;
+
+		        			boats[i].direction--;
+		        			if(boats[i].direction < 0)
+		        				boats[i].direction = 3;
+		        		}
+		        	}
         		}
         		
         		return true;
@@ -584,6 +611,10 @@ public class MainActivity extends ActionBarActivity {
     	public boolean placeBoat(Boat boat, int x, int y){
 			Log.i("placeBoat","Start");
     		boolean success = true;
+    		
+    		if(x > 9 || x < 0 || y > 9 || y < 0){
+    			return false;
+    		}
     		
     		boolean[] valid = new boolean[boat.length];
     		
