@@ -1,7 +1,19 @@
 package com.example.battleship;
 
+import java.io.IOException;
 import java.util.Random;
 
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+import com.cscheide.Reader.SerialWebs;
+import com.google.gson.Gson;
+
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -9,6 +21,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
@@ -21,7 +34,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends Activity {
 	//The graph of the players area
 	public Graph aGraph;									//A graph of the players ship positions
 	public boolean[][] aAttacks;							//A graph of the positions that the player has attacked
@@ -47,6 +60,8 @@ public class MainActivity extends ActionBarActivity {
 	public AI ai;							//Artificial Intelligence that controls opponent during singlePlayer
 	public Boat[] boats;					//An array that stores all of the players boats
 	
+	static final private String LOG_TAG = "main";
+	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,6 +71,13 @@ public class MainActivity extends ActionBarActivity {
         attack = new bView(getApplicationContext());
         place = new placeView(getApplicationContext());
         setContentView(R.layout.activity_main);
+        
+     // Server Request URL
+        String serverURL = "http://ucsc-cmps121-battleship.appspot.com/_je/messages";
+        
+        // Create Object and call AsyncTask execute Method
+        new LongOperation().execute(serverURL);
+
         
         //Determining the size of the screen
         Display display = getWindowManager().getDefaultDisplay();
@@ -232,6 +254,99 @@ public class MainActivity extends ActionBarActivity {
         });
     }
 
+ // Class with extends AsyncTask class
+    private class LongOperation  extends AsyncTask<String, Void, Void> {
+         
+        private final HttpClient Client = new DefaultHttpClient();
+        private String Content;
+        private String Error = null;
+        private SerialWebs sites;
+//        private ProgressDialog Dialog = new ProgressDialog(AsyncronoustaskAndroidExample.this);
+         
+        //TextView uiUpdate = (TextView) findViewById(R.id.output);
+    	
+        protected void onPreExecute() {
+            // NOTE: You can call UI Element here.
+             
+        }
+ 
+        // Call after onPreExecute method
+        protected Void doInBackground(String... urls) {
+            try {
+                 
+                // Call long running operations here (perform background computation)
+                // NOTE: Don't call UI Element here.
+                 
+                // Server url call by GET method
+                HttpGet httpget = new HttpGet(urls[0]);
+                ResponseHandler<String> responseHandler = new BasicResponseHandler();
+                Content = Client.execute(httpget, responseHandler);
+                 
+            } catch (ClientProtocolException e) {
+                Error = e.getMessage();
+                cancel(true);
+            } catch (IOException e) {
+                Error = e.getMessage();
+                cancel(true);
+            }
+             
+            return null;
+        }
+         
+        protected void onPostExecute(Void unused) {
+            // NOTE: You can call UI Element here.
+             
+        	//Gson gson = new Gson();
+        	
+            // Close progress dialog
+            //Dialog.dismiss();
+             
+            if (Error != null) {
+                 
+            	Log.d(LOG_TAG, "Error: " + Error);
+                 
+            } else {
+                 
+            	Log.d(LOG_TAG, "Result: " + Content);
+//            	String jsonStrings[] = Content.split("\\r?\\n");
+//            	for (int i = 0; i < jsonStrings.length; i++)
+//            	{
+//            		
+//            			SerialWebs alter = gson.fromJson(jsonStrings[i], SerialWebs.class);
+//            			for (int j = 0; j < alter.sites.size(); j++)
+//            			{
+//            				
+//            				try
+//            				{
+//            					if (alter.sites.get(j).title != null || alter.sites.get(j).url != null)
+//            					{
+//            						Log.i(LOG_TAG, alter.sites.get(j).title);
+//                					Log.i(LOG_TAG, alter.sites.get(j).url);
+//                					
+//                					ListElement el = new ListElement();
+//                					el.textLabel = alter.sites.get(j).title;
+//                					el.site = alter.sites.get(j);
+//                					//el. = "Go!";
+//                					aList.add(el);
+//                					Log.d(LOG_TAG, "The length of the list now is " + aList.size());
+//                					aa.notifyDataSetChanged();
+//            					}
+//            					
+//            				}
+//                    		catch (NullPointerException e)
+//                    		{
+//                    			alter.sites.remove(j);
+//                    		}
+//            			}
+//            		
+//            	}
+             }
+            
+        }
+         
+    }
+
+    
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         
