@@ -168,8 +168,11 @@ public class MainActivity extends ActionBarActivity {
 		        				bAttacks[ai.moves[turn-1].x][ai.moves[turn-1].y] = true;
 	        					if(ai.aiGraph.graph[(int)x][(int)y].tag == "boat")
 	        						ai.boats_remaining--;
-	        					if(aGraph.graph[ai.moves[turn-1].x][ai.moves[turn-1].y].tag == "boat")
+	        					if(aGraph.graph[ai.moves[turn-1].x][ai.moves[turn-1].y].tag == "boat"){
 	        						boats_remaining--;
+	        						//When the AI actually hits one of the players boats, the AI must recalculate their attacks to improve their chances of hitting the rest of the players ship
+	        						//ai.makeNewAttackArray(ai.moves[turn-1].x,ai.moves[turn-1].y);
+	        					}
 	        					setContentView(game);
 	        				}
 	        			}
@@ -210,19 +213,57 @@ public class MainActivity extends ActionBarActivity {
 	        		//Determines which boat is being placed, I wish I could write this as a switch statement... but I can't
 		        	if(y < 10){
 		        		if(!boats[0].placed && aGraph.graph[(int)x][(int)y].tag == "water"){			//Placing Battleship
-		        			if(aGraph.graph[(int)x][(int)y].state == 3)
-		        				boats[0].placed = aGraph.placeBoat(boats[0], (int)x, (int)y);
-		        			else{aGraph.placeBoatTemp(boats[0], (int) x, (int)y);}
+		        			if(aGraph.graph[(int)x][(int)y].state == 3){
+		        				//boats[0].placed = aGraph.placeBoat(boats[0], (int)x, (int)y);
+		        				for(int i = 0; i < 10; i++){
+		        					for(int j = 0; j < 10; j++){
+		        						if(aGraph.graph[i][j].state == 3){
+		        							aGraph.graph[i][j].tag = "boat";
+		        							aGraph.graph[i][j].state = 0;
+		        						}
+		        					}
+		        				}
+		        				boats[0].placed = true;
+		        			}
+		        			else{
+		        				aGraph.placeBoatTemp(boats[0], (int) x, (int)y);
+		        			}
 		            		place.invalidate();
 		        		}
 		        		else if(!boats[1].placed && aGraph.graph[(int)x][(int)y].tag == "water"){		//Placing Submarine
-	
-		        			boats[1].placed = aGraph.placeBoat(boats[1], (int)x, (int)y);
+		        			if(aGraph.graph[(int)x][(int)y].state == 3){
+		        				//boats[0].placed = aGraph.placeBoat(boats[0], (int)x, (int)y);
+		        				for(int i = 0; i < 10; i++){
+		        					for(int j = 0; j < 10; j++){
+		        						if(aGraph.graph[i][j].state == 3){
+		        							aGraph.graph[i][j].tag = "boat";
+		        							aGraph.graph[i][j].state = 0;
+		        						}
+		        					}
+		        				}
+		        				boats[1].placed = true;
+		        			}
+		        			else{
+		        				aGraph.placeBoatTemp(boats[1], (int) x, (int)y);
+		        			}
 		            		place.invalidate();
 		        		}
 		        		else if(!boats[2].placed && aGraph.graph[(int)x][(int)y].tag == "water"){		//Placing Air Craft Carrier
-	
-		        			boats[2].placed = aGraph.placeBoat(boats[2], (int)x, (int)y);
+		        			if(aGraph.graph[(int)x][(int)y].state == 3){
+		        				//boats[0].placed = aGraph.placeBoat(boats[0], (int)x, (int)y);
+		        				for(int i = 0; i < 10; i++){
+		        					for(int j = 0; j < 10; j++){
+		        						if(aGraph.graph[i][j].state == 3){
+		        							aGraph.graph[i][j].tag = "boat";
+		        							aGraph.graph[i][j].state = 0;
+		        						}
+		        					}
+		        				}
+		        				boats[2].placed = true;
+		        			}
+		        			else{
+		        				aGraph.placeBoatTemp(boats[2], (int) x, (int)y);
+		        			}
 		            		place.invalidate();
 		
 		        		}
@@ -476,7 +517,7 @@ public class MainActivity extends ActionBarActivity {
 	    					rx = lx + (sizeX / 10);
 	    					by = j * (sizeY / 12);
 	    					ty = by + (sizeY / 12);
-	    		    		paint.setColor(Color.YELLOW);
+	    		    		paint.setColor(Color.BLACK);
 	    					canvas.drawRect(lx, ty, rx, by, paint);
 	    					
 	    				}
@@ -557,9 +598,7 @@ public class MainActivity extends ActionBarActivity {
     		ty -= getHeight() / 12;
     		float by = getHeight();
     		canvas.drawRect(lx, ty, rx, by, paint);
-    		paint.setColor(Color.BLACK);
-    		paint.setTextSize(100);
-    		canvas.drawText("Place your Battleships!", rx/2, getHeight() / 2, paint);
+
     		
        		for(int i = 0; i < 10; i++){
     			for(int j = 0; j < 10; j++){
@@ -579,7 +618,7 @@ public class MainActivity extends ActionBarActivity {
     		    		paint.setColor(Color.GREEN);
     					canvas.drawRect(lx, ty, rx, by, paint);
     				}
-    				else if(aGraph.graph[i][j].state == 3){
+    				if(aGraph.graph[i][j].state == 3){
     					lx = i * (sizeX / 10);
     					rx = lx + (sizeX / 10);
     					by = j * (sizeY / 12);
@@ -589,6 +628,10 @@ public class MainActivity extends ActionBarActivity {
     				}
     			}
     		}
+
+    		paint.setColor(Color.BLACK);
+    		paint.setTextSize(50);
+    		canvas.drawText("Place your Battleships!", (getWidth() / 2) - 50, getHeight() / 2, paint);
     	}
 	
 	}
@@ -791,11 +834,12 @@ public class MainActivity extends ActionBarActivity {
     			}
     		}
     		for(int i = 0; i < boat.length; i++){
-    			if(!valid[i])
+    			if(!valid[i]){
     				success = false;
-    			else{Log.i("placeBoat","Bad Location");}
+    				Log.i("placeBoat","Bad Location");
+    			}
+    			else{Log.i("placeBoat","Good Location");}
     		}
-    		//If there is a collision ensure that all the squares are reverted to being water
     		if(success){
 	    		for(int i = 0; i < boat.length; i++){
 	    			String tempStr = "Boat Piece: " + String.valueOf(i);
@@ -803,7 +847,7 @@ public class MainActivity extends ActionBarActivity {
 	    			switch(boat.direction){
 	    				case 0:						//Direction = UP
 	    					graph[x][y-i].state = 3;
-	    					tempStr = "Boat Piece: " + String.valueOf(i) + " placed";
+	    					tempStr = "Boat Piece: " + String.valueOf(i) + " placed. State: " + String.valueOf(graph[x][y-i].state);
 	    		    		Log.i("placeBoat", tempStr);
 	    					break;
 	    				case 1:						//Direction = RIGHT
@@ -853,9 +897,12 @@ public class MainActivity extends ActionBarActivity {
     //Note that the AI only currently has 3 boats, this is because I could only think of the names of three of the boats
     //when I wrote this portion of the code, upon seeing this I would appreciate it if somebody remedied this small issue
     public class AI{
-    	public Coord[] moves;
-    	public Graph aiGraph;
-    	int boats_remaining;
+    	public Coord[] moves;					//An array that holds all of the AI's attacks
+    	public Graph aiGraph;					//The graph that the AI places ships on
+    	int boats_remaining;					//The number of boats that the ai has remaining. If this reaches 0, player wins
+    	
+    	//This portion of the code could be written with an array of boats easily, it is written this way so that it is obvious what is happening in the code.
+    	//When I wrote this code I had not yet written the place function, and it was helpful to name all the ships
     	Boat battle_ship;
     	Boat submarine;
     	Boat air_craft_carrier;
@@ -864,27 +911,28 @@ public class MainActivity extends ActionBarActivity {
     	AI(){
     		//This segment is generating coordinates for the random moves
     		Log.i("AI", "Constructing Moves");
-    		aiGraph = new Graph();
-    		moves = new Coord[100];
+    		aiGraph = new Graph();			
+    		moves = new Coord[100];			
     		Random r = new Random();
     		int i, tempX, tempY;
     		i = 0;
     		boolean found;
+    		
+    		//This section of code determines all of the attacks that the AI will make.
+    		//Note: The AI will update this array (moves) if they manage to hit a ship
     		Log.i("AI", "Constructing Moves Loop Start");
     		while(i < 100){
     			found = false;
     			tempX = (r.nextInt(10) + 0);
-    			//Log.i("AI",String.valueOf(tempX));
     			tempY = (r.nextInt(10) + 0);
-    			//Log.i("AI",String.valueOf(tempY));
 
     			
     			//This segment of code is meant to ensure that there are no repeats in generated coordinates
     			//It is commented out at the moment because it is hanging for some reason
-    			/*for(int it = 0; it < i; it++){
+    			for(int it = 0; it < i; it++){
     				if(moves[it].x == tempX && moves[it].y == tempY)
     					found = true;
-    			}*/
+    			}
     			if(!found){
     				//Log.i("AI", "Constructing Moves Loop Placing");
     				moves[i] = new Coord(tempX, tempY);
@@ -937,6 +985,91 @@ public class MainActivity extends ActionBarActivity {
 			
 			
     		Log.i("AI", "Finished");
+    	}
+    	
+    	//When the AI hits a ship, this function is called to determine where the shots should go from here on out
+    	void makeNewAttackArray(int x, int y){
+    		Log.i("newMoves","Check 1");
+    		
+    		Coord[] newMoves = new Coord[100];
+    		
+    		//Begins by copying all the previous moves to a new array
+    		int i;
+    		boolean[] found = new boolean[4];
+    		for(i = 0; i < turn-1; i++){
+    			newMoves[i] = new Coord(moves[i].x, moves[i].y);
+    			
+    			//Checking which of the surrounding tiles have been hit before
+    			if(moves[i].x == x && moves[i].y == (y - 1))			//UP
+    				found[0] = true;
+    			else if(moves[i].x == (x + 1) && moves[i].y == y)		//RIGHT
+    				found[1] = true;
+    			else if(moves[i].x == x && moves[i].y == (y + 1))		//DOWN
+    				found[2] = true;
+    			else if(moves[i].x == (x - 1) && moves[i].y == y)		//LEFT
+    				found[3] = true;
+    		}
+
+    		Log.i("newMoves","Check 2");
+    		
+    		i = turn - 1;
+    		if(!found[0]){
+    			newMoves[i].x = x;
+    			newMoves[i].y = (y - 1);
+    			i++;
+    		}
+    		if(!found[1]){
+    			newMoves[i].x = (x + 1);
+    			newMoves[i].y = y;
+    			i++;
+    		}
+    		if(!found[2]){
+    			newMoves[i].x = x;
+    			newMoves[i].y = (y + 1);
+    			i++;
+    		}
+    		if(!found[3]){
+    			newMoves[i].x = (x - 1);
+    			newMoves[i].y = y;
+    			i++;
+    		}
+    		
+    		Log.i("newMoves","Check 3");
+    		
+    		//Declaring Variables here to save processing during the loop below
+    		Random r = new Random();
+    		int tempX, tempY;
+    		boolean temp;
+    		
+    		//Generating the rest of the moves for the AI
+    		while(i < 100){
+    			temp = false;
+    			tempX = (r.nextInt(10) + 0);
+    			tempY = (r.nextInt(10) + 0);
+
+    			
+    			//This segment of code is meant to ensure that there are no repeats in generated coordinates
+    			//It is commented out at the moment because it is hanging for some reason
+    			for(int it = 0; it < i; it++){
+    				if(moves[it].x == tempX && moves[it].y == tempY)
+    					temp = true;
+    			}
+    			if(!temp){
+    				//Log.i("AI", "Constructing Moves Loop Placing");
+    				moves[i] = new Coord(tempX, tempY);
+    				//Log.i("AI", "Constructing Moves Loop Placed");
+    				i++;
+    			}
+    		}
+    		
+    		
+    		Log.i("newMoves","Check 4");
+    		
+    		//Copy the temp array back into "moves"
+    		for(i = 0; i < 100; i++){
+    			moves[i].x = newMoves[i].x;
+    			moves[i].y = newMoves[i].y;
+    		}
     	}
     	
     }
