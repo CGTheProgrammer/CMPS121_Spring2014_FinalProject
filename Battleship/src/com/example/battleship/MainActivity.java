@@ -73,7 +73,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         
      // Server Request URL
-        String serverURL = "http://ucsc-cmps121-battleship.appspot.com/_je/messages";
+        String serverURL = "http://luca-ucsc.appspot.com/jsonnews/default/news_sources.json";
         
         // Create Object and call AsyncTask execute Method
         new LongOperation().execute(serverURL);
