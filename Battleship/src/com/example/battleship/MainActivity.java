@@ -1,16 +1,27 @@
 package com.example.battleship;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.Random;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-import com.cscheide.Reader.SerialWebs;
+import com.example.battleship.SerialGame;
 import com.google.gson.Gson;
 
 import android.app.Activity;
@@ -75,8 +86,7 @@ public class MainActivity extends Activity {
      // Server Request URL
         String serverURL = "http://luca-ucsc.appspot.com/jsonnews/default/news_sources.json";
         
-        // Create Object and call AsyncTask execute Method
-        new LongOperation().execute(serverURL);
+        
 
         
         //Determining the size of the screen
@@ -114,6 +124,17 @@ public class MainActivity extends Activity {
         		aAttacks[i][j] = false;
         		bAttacks[i][j] = false;
         	}
+        	
+        	
+        }
+        
+     // Create Object and call AsyncTask execute Method
+        try{
+        	new LongOperation().execute(serverURL);
+        }
+        catch (RuntimeException e)
+        {
+        	
         }
         
         //Setting up the touch input for each of the views      
@@ -254,13 +275,27 @@ public class MainActivity extends Activity {
         });
     }
 
+    public static String convertStreamToString(InputStream is) throws Exception {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder sb = new StringBuilder();
+        String line = null;
+
+        while ((line = reader.readLine()) != null) {
+            sb.append(line);
+        }
+
+        is.close();
+
+        return sb.toString();
+    }
+    
  // Class with extends AsyncTask class
     private class LongOperation  extends AsyncTask<String, Void, Void> {
          
         private final HttpClient Client = new DefaultHttpClient();
         private String Content;
         private String Error = null;
-        private SerialWebs sites;
+        //private SerialWebs sites;
 //        private ProgressDialog Dialog = new ProgressDialog(AsyncronoustaskAndroidExample.this);
          
         //TextView uiUpdate = (TextView) findViewById(R.id.output);
@@ -272,13 +307,73 @@ public class MainActivity extends Activity {
  
         // Call after onPreExecute method
         protected Void doInBackground(String... urls) {
+            
+        	//Try to update JSON doc
+             
+            SerialGame serialGame = new SerialGame();
+            Gson gson = new Gson();
+            
+            String game = gson.toJson(serialGame, SerialGame.class);
+            //Log.d(LOG_TAG, game);
+            
+            HttpClient httpClient = new DefaultHttpClient();
+            HttpPost httpPost = new HttpPost("http://ucsc-cmps121-battleship.appspot.com/_je/test");
+            
+            httpPost.setHeader("Content-type", "application/json");
+            
+            JSONObject shaun = new JSONObject();
             try {
-                 
+				shaun.put("test", "testing");
+			} catch (JSONException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+            
+            try {
+				StringEntity se = new StringEntity(shaun.toString());
+				
+				se.setContentEncoding("UTF-8");
+			    se.setContentType("application/json");
+				
+				httpPost.setEntity(se);
+			} catch (UnsupportedEncodingException e) {
+				Log.d(LOG_TAG, "String encoding error\n");
+				e.printStackTrace();
+			}
+            
+            try {
+				HttpResponse response = httpClient.execute(httpPost);
+				
+				HttpEntity entity = response.getEntity();
+			    InputStream is = entity.getContent();
+			    String _response = convertStreamToString(is);
+			    Log.d(LOG_TAG, "res--  " + _response);
+
+			    // Check if server response is valid code          
+			    int res_code = response.getStatusLine().getStatusCode();
+			    Log.d(LOG_TAG, "code-- " +res_code);
+			} catch (ClientProtocolException e) {
+				Log.d(LOG_TAG, "Protocol exception\n");
+				e.printStackTrace();
+			} catch (IOException e) {
+				Log.d(LOG_TAG, "IO Exception\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				Log.d(LOG_TAG, "Exception\n");
+				e.printStackTrace();
+			}
+
+            //Try to read JSON doc
+            
+            try {
+                
                 // Call long running operations here (perform background computation)
                 // NOTE: Don't call UI Element here.
                  
+            	
+            	
                 // Server url call by GET method
-                HttpGet httpget = new HttpGet(urls[0]);
+                HttpGet httpget = new HttpGet("http://ucsc-cmps121-battleship.appspot.com/_je/test");
                 ResponseHandler<String> responseHandler = new BasicResponseHandler();
                 Content = Client.execute(httpget, responseHandler);
                  
@@ -289,7 +384,7 @@ public class MainActivity extends Activity {
                 Error = e.getMessage();
                 cancel(true);
             }
-             
+            
             return null;
         }
          
