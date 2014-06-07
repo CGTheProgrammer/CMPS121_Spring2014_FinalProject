@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Random;
 
 import org.apache.http.HttpEntity;
@@ -20,6 +21,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -86,10 +88,8 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         
      // Server Request URL
-        String serverURL = "http://luca-ucsc.appspot.com/jsonnews/default/news_sources.json";
+        String serverURL = "http://ucsc-cmps121-battleship.appspot.com/classexample/default";
         
-        
-
         
         //Determining the size of the screen
         Display display = getWindowManager().getDefaultDisplay();
@@ -297,20 +297,24 @@ public class MainActivity extends Activity {
  
             // 4. convert JSONObject to JSON to String
             json = jsonObject.toString();
+            
+            json = URLEncoder.encode(json, "UTF-8");
  
             // ** Alternative way to convert Person object to JSON string usin Jackson Lib 
             // ObjectMapper mapper = new ObjectMapper();
             // json = mapper.writeValueAsString(person); 
  
             // 5. set json to StringEntity
-            StringEntity se = new StringEntity(json);
- 
+            StringEntity visitBeanStringEntity = new StringEntity(json);
+            httpPost.setEntity(visitBeanStringEntity);
+            httpPost.setHeader("json", "application/json");
+            httpPost.setHeader(HTTP.CONTENT_TYPE, "application/json");
             // 6. set httpPost Entity
-            httpPost.setEntity(se);
+
  
             // 7. Set some headers to inform server about the type of the content   
-            httpPost.setHeader("Accept", "application/json");
-            httpPost.setHeader("Content-type", "application/json");
+//            httpPost.setHeader("Accept", "application/json");
+//            httpPost.setHeader("Content-type", "application/json");
  
             // 8. Execute POST request to the given URL
             HttpResponse httpResponse = httpclient.execute(httpPost);
@@ -373,7 +377,7 @@ public class MainActivity extends Activity {
             String game = gson.toJson(serialGame, SerialGame.class);
             //Log.d(LOG_TAG, game);
             
-            Log.d(LOG_TAG, POST("http://ucsc-cmps121-battleship.appspot.com/_je/test"));
+            Log.d(LOG_TAG, POST("http://ucsc-cmps121-battleship.appspot.com/classexample/default/test.json"));
             
 //            HttpParams httpParams = new BasicHttpParams();
 //            HttpConnectionParams.setConnectionTimeout(httpParams, TIMEOUT_MILLISEC);
@@ -436,7 +440,7 @@ public class MainActivity extends Activity {
             	
             	
                 // Server url call by GET method
-                HttpGet httpget = new HttpGet("http://ucsc-cmps121-battleship.appspot.com/_je/test");
+                HttpGet httpget = new HttpGet("http://ucsc-cmps121-battleship.appspot.com/classexample/default/send.json");
                 ResponseHandler<String> responseHandler = new BasicResponseHandler();
                 Content = Client.execute(httpget, responseHandler);
                  
