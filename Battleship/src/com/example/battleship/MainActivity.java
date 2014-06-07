@@ -17,6 +17,9 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -34,7 +37,6 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Display;
 import android.view.Menu;
@@ -275,6 +277,61 @@ public class MainActivity extends Activity {
         });
     }
 
+    public static String POST(String url){
+        InputStream inputStream = null;
+        String result = "";
+        try {
+ 
+            // 1. create HttpClient
+            HttpClient httpclient = new DefaultHttpClient();
+ 
+            // 2. make POST request to the given URL
+            HttpPost httpPost = new HttpPost(url);
+ 
+            String json = "";
+ 
+            // 3. build jsonObject
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.accumulate("name", "John Madden");
+            jsonObject.accumulate("country", "The Moon");
+ 
+            // 4. convert JSONObject to JSON to String
+            json = jsonObject.toString();
+ 
+            // ** Alternative way to convert Person object to JSON string usin Jackson Lib 
+            // ObjectMapper mapper = new ObjectMapper();
+            // json = mapper.writeValueAsString(person); 
+ 
+            // 5. set json to StringEntity
+            StringEntity se = new StringEntity(json);
+ 
+            // 6. set httpPost Entity
+            httpPost.setEntity(se);
+ 
+            // 7. Set some headers to inform server about the type of the content   
+            httpPost.setHeader("Accept", "application/json");
+            httpPost.setHeader("Content-type", "application/json");
+ 
+            // 8. Execute POST request to the given URL
+            HttpResponse httpResponse = httpclient.execute(httpPost);
+ 
+            // 9. receive response as inputStream
+            inputStream = httpResponse.getEntity().getContent();
+ 
+            // 10. convert inputstream to string
+            if(inputStream != null)
+                result = convertStreamToString(inputStream);
+            else
+                result = "Did not work!";
+ 
+        } catch (Exception e) {
+            Log.d("InputStream", e.getLocalizedMessage());
+        }
+ 
+        // 11. return result
+        return result;
+    }
+    
     public static String convertStreamToString(InputStream is) throws Exception {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         StringBuilder sb = new StringBuilder();
@@ -316,52 +373,58 @@ public class MainActivity extends Activity {
             String game = gson.toJson(serialGame, SerialGame.class);
             //Log.d(LOG_TAG, game);
             
-            HttpClient httpClient = new DefaultHttpClient();
-            HttpPost httpPost = new HttpPost("http://ucsc-cmps121-battleship.appspot.com/_je/test");
+            Log.d(LOG_TAG, POST("http://ucsc-cmps121-battleship.appspot.com/_je/test"));
             
-            httpPost.setHeader("Content-type", "application/json");
-            
-            JSONObject shaun = new JSONObject();
-            try {
-				shaun.put("test", "testing");
-			} catch (JSONException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-            
-            try {
-				StringEntity se = new StringEntity(shaun.toString());
-				
-				se.setContentEncoding("UTF-8");
-			    se.setContentType("application/json");
-				
-				httpPost.setEntity(se);
-			} catch (UnsupportedEncodingException e) {
-				Log.d(LOG_TAG, "String encoding error\n");
-				e.printStackTrace();
-			}
-            
-            try {
-				HttpResponse response = httpClient.execute(httpPost);
-				
-				HttpEntity entity = response.getEntity();
-			    InputStream is = entity.getContent();
-			    String _response = convertStreamToString(is);
-			    Log.d(LOG_TAG, "res--  " + _response);
-
-			    // Check if server response is valid code          
-			    int res_code = response.getStatusLine().getStatusCode();
-			    Log.d(LOG_TAG, "code-- " +res_code);
-			} catch (ClientProtocolException e) {
-				Log.d(LOG_TAG, "Protocol exception\n");
-				e.printStackTrace();
-			} catch (IOException e) {
-				Log.d(LOG_TAG, "IO Exception\n");
-				e.printStackTrace();
-			} catch (Exception e) {
-				Log.d(LOG_TAG, "Exception\n");
-				e.printStackTrace();
-			}
+//            HttpParams httpParams = new BasicHttpParams();
+//            HttpConnectionParams.setConnectionTimeout(httpParams, TIMEOUT_MILLISEC);
+//            HttpConnectionParams.setSoTimeout(httpParams, TIMEOUT_MILLISEC);
+//            HttpClient client = new DefaultHttpClient(httpParams);
+//            HttpPost request = new HttpPost("http://ucsc-cmps121-battleship.appspot.com/_je/test");
+//
+//            
+//            httpPost.setHeader("Content-type", "application/json");
+//            
+//            JSONObject shaun = new JSONObject();
+//            try {
+//				shaun.put("test", "testing");
+//			} catch (JSONException e1) {
+//				// TODO Auto-generated catch block
+//				e1.printStackTrace();
+//			}
+//            
+//            try {
+//				StringEntity se = new StringEntity(shaun.toString());
+//				
+//				se.setContentEncoding("UTF-8");
+//			    se.setContentType("application/json");
+//				
+//				httpPost.setEntity(se);
+//			} catch (UnsupportedEncodingException e) {
+//				Log.d(LOG_TAG, "String encoding error\n");
+//				e.printStackTrace();
+//			}
+//            
+//            try {
+//				HttpResponse response = httpClient.execute(httpPost);
+//				
+//				HttpEntity entity = response.getEntity();
+//			    InputStream is = entity.getContent();
+//			    String _response = convertStreamToString(is);
+//			    Log.d(LOG_TAG, "res--  " + _response);
+//
+//			    // Check if server response is valid code          
+//			    int res_code = response.getStatusLine().getStatusCode();
+//			    Log.d(LOG_TAG, "code-- " +res_code);
+//			} catch (ClientProtocolException e) {
+//				Log.d(LOG_TAG, "Protocol exception\n");
+//				e.printStackTrace();
+//			} catch (IOException e) {
+//				Log.d(LOG_TAG, "IO Exception\n");
+//				e.printStackTrace();
+//			} catch (Exception e) {
+//				Log.d(LOG_TAG, "Exception\n");
+//				e.printStackTrace();
+//			}
 
             //Try to read JSON doc
             
