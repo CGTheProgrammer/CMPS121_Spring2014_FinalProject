@@ -6,7 +6,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.HashMap;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
+
+import junit.framework.Test;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -26,6 +30,8 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.example.battleship.ServerCall;
+import com.example.battleship.ServerCallSpec;
 import com.example.battleship.SerialGame;
 import com.google.gson.Gson;
 
@@ -47,7 +53,10 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.Toast;
+
+
 
 public class MainActivity extends Activity {
 	//The graph of the players area
@@ -76,6 +85,11 @@ public class MainActivity extends Activity {
 	public Boat[] boats;					//An array that stores all of the players boats
 	
 	static final private String LOG_TAG = "main";
+	//static final private String gameServerURL = "http://ucsc-cmps121-battleship.appspot.com/classexample/default/game0.json";
+	
+	// Background downloader.
+	private ServerCall downloader = null;
+	public static final String SERVER_URL_PREFIX = "http://ucsc-cmps121-battleship.appspot.com/classexample/default/";
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,7 +102,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         
      // Server Request URL
-        String serverURL = "http://ucsc-cmps121-battleship.appspot.com/classexample/default";
+        //String serverURL = "http://ucsc-cmps121-battleship.appspot.com/classexample/default/game0.json";
         
         
         //Determining the size of the screen
@@ -130,15 +144,81 @@ public class MainActivity extends Activity {
         	
         }
         
-     // Create Object and call AsyncTask execute Method
-        try{
-        	new LongOperation().execute(serverURL);
-        }
-        catch (RuntimeException e)
-        {
-        	
-        }
         
+        /////////////////////////////////////////////////////////////////////////////////
+        //CHECK THIS SWEET SERVER CODE EXAMPLE
+        //In the real game, you should first check for open games with downloadGame
+        //Do not start with uploadGame
+        //
+        //1. Check for open games (if it doesn't find one it returns "{result = "no open games"}", otherwise returns the game)
+        //2. If there's no open games, make one with uploadGame (make up a unique gameID somehow)
+        /////////////////////////////////////////////////////////////////////////////////
+        
+        Gson gson = new Gson();
+        
+        /////////////////////////////////////////////////////////////////////////
+        //Upload Example
+        //Saves a game to a specific slot (gameID), or creates a new file if necessary
+        
+        //Fake game
+        SerialGame sGame = new SerialGame();
+        sGame.gameID = "Test"; //Use a random number or device ID for this
+        sGame.maxPlayers = 2;
+        sGame.numPlayers = 1;
+        sGame.open = true;
+        sGame.playA = "Test String";
+        sGame.playB = "Test String";
+        sGame.turn = 0;
+        
+        //Convert game to HashMap
+        HashMap<String, String> m = sGame.toHash();
+        
+        //SendSpec handles the server transaction, don't use the same one for uploads and downloads!
+        ServerCallSpec uploadSpec = new ServerCallSpec();
+        //Configure URL: Uploads use uploadGame, downloads use downloadGame
+		uploadSpec.url = MainActivity.SERVER_URL_PREFIX + "uploadGame.json";
+		uploadSpec.setParams(m);
+		uploadSpec.context = getApplication();
+
+		// Initiates and executes server call.
+		downloader = new ServerCall();
+		downloader.execute(uploadSpec);
+		
+		///////////////////////////////////////////////////////////////////////
+		//Download Example
+		//Returns a specific closed game, or finds an open one and returns the gameID
+		ServerCallSpec downloadSpec = new ServerCallSpec();
+		downloadSpec.url = MainActivity.SERVER_URL_PREFIX + "downloadGame.json";
+		m = new HashMap<String,String>();
+		m.put("gameID", "Test");
+		downloadSpec.setParams(m);
+		downloadSpec.context = getApplication();
+
+		// Initiates server call.
+		downloader = new ServerCall();
+		downloader.execute(downloadSpec);
+		
+		
+		
+		try {
+			//Grab the result of the download
+			PostProcessPair test = downloader.get();
+			Log.d(LOG_TAG, test.result);
+			//Convert download to game object
+			sGame = gson.fromJson(test.result, SerialGame.class);
+			Log.d(LOG_TAG, sGame.gameID);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        
+		////////////////////////////////////////////////////////////////////////
+		//END SWEET SERVER CODE EXAMPLE
+		////////////////////////////////////////////////////////////////////////
+		
         //Setting up the touch input for each of the views      
         
         //Setting up the system that senses touch input for the game view
@@ -277,236 +357,35 @@ public class MainActivity extends Activity {
         });
     }
 
-    public static String POST(String url){
-        InputStream inputStream = null;
-        String result = "";
-        try {
- 
-            // 1. create HttpClient
-            HttpClient httpclient = new DefaultHttpClient();
- 
-            // 2. make POST request to the given URL
-            HttpPost httpPost = new HttpPost(url);
- 
-            String json = "";
- 
-            // 3. build jsonObject
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.accumulate("name", "John Madden");
-            jsonObject.accumulate("country", "The Moon");
- 
-            // 4. convert JSONObject to JSON to String
-            json = jsonObject.toString();
-            
-            json = URLEncoder.encode(json, "UTF-8");
- 
-            // ** Alternative way to convert Person object to JSON string usin Jackson Lib 
-            // ObjectMapper mapper = new ObjectMapper();
-            // json = mapper.writeValueAsString(person); 
- 
-            // 5. set json to StringEntity
-            StringEntity visitBeanStringEntity = new StringEntity(json);
-            httpPost.setEntity(visitBeanStringEntity);
-            httpPost.setHeader("json", "application/json");
-            httpPost.setHeader(HTTP.CONTENT_TYPE, "application/json");
-            // 6. set httpPost Entity
 
- 
-            // 7. Set some headers to inform server about the type of the content   
-//            httpPost.setHeader("Accept", "application/json");
-//            httpPost.setHeader("Content-type", "application/json");
- 
-            // 8. Execute POST request to the given URL
-            HttpResponse httpResponse = httpclient.execute(httpPost);
- 
-            // 9. receive response as inputStream
-            inputStream = httpResponse.getEntity().getContent();
- 
-            // 10. convert inputstream to string
-            if(inputStream != null)
-                result = convertStreamToString(inputStream);
-            else
-                result = "Did not work!";
- 
-        } catch (Exception e) {
-            Log.d("InputStream", e.getLocalizedMessage());
-        }
- 
-        // 11. return result
-        return result;
-    }
     
-    public static String convertStreamToString(InputStream is) throws Exception {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        StringBuilder sb = new StringBuilder();
-        String line = null;
-
-        while ((line = reader.readLine()) != null) {
-            sb.append(line);
-        }
-
-        is.close();
-
-        return sb.toString();
-    }
-    
- // Class with extends AsyncTask class
-    private class LongOperation  extends AsyncTask<String, Void, Void> {
-         
-        private final HttpClient Client = new DefaultHttpClient();
-        private String Content;
-        private String Error = null;
-        //private SerialWebs sites;
-//        private ProgressDialog Dialog = new ProgressDialog(AsyncronoustaskAndroidExample.this);
-         
-        //TextView uiUpdate = (TextView) findViewById(R.id.output);
-    	
-        protected void onPreExecute() {
-            // NOTE: You can call UI Element here.
-             
-        }
- 
-        // Call after onPreExecute method
-        protected Void doInBackground(String... urls) {
-            
-        	//Try to update JSON doc
-             
-            SerialGame serialGame = new SerialGame();
-            Gson gson = new Gson();
-            
-            String game = gson.toJson(serialGame, SerialGame.class);
-            //Log.d(LOG_TAG, game);
-            
-            Log.d(LOG_TAG, POST("http://ucsc-cmps121-battleship.appspot.com/classexample/default/test.json"));
-            
-//            HttpParams httpParams = new BasicHttpParams();
-//            HttpConnectionParams.setConnectionTimeout(httpParams, TIMEOUT_MILLISEC);
-//            HttpConnectionParams.setSoTimeout(httpParams, TIMEOUT_MILLISEC);
-//            HttpClient client = new DefaultHttpClient(httpParams);
-//            HttpPost request = new HttpPost("http://ucsc-cmps121-battleship.appspot.com/_je/test");
-//
-//            
-//            httpPost.setHeader("Content-type", "application/json");
-//            
-//            JSONObject shaun = new JSONObject();
-//            try {
-//				shaun.put("test", "testing");
-//			} catch (JSONException e1) {
-//				// TODO Auto-generated catch block
-//				e1.printStackTrace();
+//	// Checks server response, currently doesn't do anything
+//	class SendSpec extends ServerCallSpec {
+//		@Override
+//		public void useResult(Context context, String r) {
+//			// If we get a null result, the server is down.
+//			// Go to the Network configuration.
+//			boolean success = false;
+//			if (r != null) {
+//				// Decodes the Json
+//				Gson gson = new Gson();
+//				OkResult result = gson.fromJson(r, OkResult.class);
+//				success = result.result;
 //			}
-//            
-//            try {
-//				StringEntity se = new StringEntity(shaun.toString());
-//				
-//				se.setContentEncoding("UTF-8");
-//			    se.setContentType("application/json");
-//				
-//				httpPost.setEntity(se);
-//			} catch (UnsupportedEncodingException e) {
-//				Log.d(LOG_TAG, "String encoding error\n");
-//				e.printStackTrace();
+//			if (success) {
+//				finish();
+//			} else {
+//				// Makes the progress bar visible.
+//				//ProgressBar pgb = (ProgressBar) findViewById(R.id.progressBar1);
+//				//pgb.setVisibility(View.GONE);
+//				// Makes a toast for failure.
+////				Toast toast = Toast.makeText(context, "Network problem: the message has not been sent.", Toast.LENGTH_LONG);
+////				toast.show();
 //			}
-//            
-//            try {
-//				HttpResponse response = httpClient.execute(httpPost);
-//				
-//				HttpEntity entity = response.getEntity();
-//			    InputStream is = entity.getContent();
-//			    String _response = convertStreamToString(is);
-//			    Log.d(LOG_TAG, "res--  " + _response);
-//
-//			    // Check if server response is valid code          
-//			    int res_code = response.getStatusLine().getStatusCode();
-//			    Log.d(LOG_TAG, "code-- " +res_code);
-//			} catch (ClientProtocolException e) {
-//				Log.d(LOG_TAG, "Protocol exception\n");
-//				e.printStackTrace();
-//			} catch (IOException e) {
-//				Log.d(LOG_TAG, "IO Exception\n");
-//				e.printStackTrace();
-//			} catch (Exception e) {
-//				Log.d(LOG_TAG, "Exception\n");
-//				e.printStackTrace();
-//			}
+//		}
+//	}
 
-            //Try to read JSON doc
-            
-            try {
-                
-                // Call long running operations here (perform background computation)
-                // NOTE: Don't call UI Element here.
-                 
-            	
-            	
-                // Server url call by GET method
-                HttpGet httpget = new HttpGet("http://ucsc-cmps121-battleship.appspot.com/classexample/default/send.json");
-                ResponseHandler<String> responseHandler = new BasicResponseHandler();
-                Content = Client.execute(httpget, responseHandler);
-                 
-            } catch (ClientProtocolException e) {
-                Error = e.getMessage();
-                cancel(true);
-            } catch (IOException e) {
-                Error = e.getMessage();
-                cancel(true);
-            }
-            
-            return null;
-        }
-         
-        protected void onPostExecute(Void unused) {
-            // NOTE: You can call UI Element here.
-             
-        	//Gson gson = new Gson();
-        	
-            // Close progress dialog
-            //Dialog.dismiss();
-             
-            if (Error != null) {
-                 
-            	Log.d(LOG_TAG, "Error: " + Error);
-                 
-            } else {
-                 
-            	Log.d(LOG_TAG, "Result: " + Content);
-//            	String jsonStrings[] = Content.split("\\r?\\n");
-//            	for (int i = 0; i < jsonStrings.length; i++)
-//            	{
-//            		
-//            			SerialWebs alter = gson.fromJson(jsonStrings[i], SerialWebs.class);
-//            			for (int j = 0; j < alter.sites.size(); j++)
-//            			{
-//            				
-//            				try
-//            				{
-//            					if (alter.sites.get(j).title != null || alter.sites.get(j).url != null)
-//            					{
-//            						Log.i(LOG_TAG, alter.sites.get(j).title);
-//                					Log.i(LOG_TAG, alter.sites.get(j).url);
-//                					
-//                					ListElement el = new ListElement();
-//                					el.textLabel = alter.sites.get(j).title;
-//                					el.site = alter.sites.get(j);
-//                					//el. = "Go!";
-//                					aList.add(el);
-//                					Log.d(LOG_TAG, "The length of the list now is " + aList.size());
-//                					aa.notifyDataSetChanged();
-//            					}
-//            					
-//            				}
-//                    		catch (NullPointerException e)
-//                    		{
-//                    			alter.sites.remove(j);
-//                    		}
-//            			}
-//            		
-//            	}
-             }
-            
-        }
-         
-    }
+
 
     
     @Override
