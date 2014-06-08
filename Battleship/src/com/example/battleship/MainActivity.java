@@ -72,11 +72,12 @@ public class MainActivity extends ActionBarActivity {
         aAttacks = new boolean[10][10];
         bAttacks = new boolean[10][10];
         
-        boats = new Boat[3];
-        boats[0] = new Boat(3, "battleship", 0);
+        boats = new Boat[5];
+        boats[0] = new Boat(4, "battleship", 0);
         boats[1] = new Boat(3, "submarine", 0);
         boats[2] = new Boat(5, "aircraftcarrier", 0);
-        
+        boats[3] = new Boat(3, "destroyer", 0);
+        boats[4] = new Boat(2, "patrol", 0);
         
         singlePlayer = false;
         
@@ -85,7 +86,7 @@ public class MainActivity extends ActionBarActivity {
 		/////////////////////////////////////////////////////////////////////////////////
 		//NOTE: THIS NEEDS TO BE CHANGED TO 17 WHEN THERE ARE 5 BOATS IN THE GAME////////
 		/////////////////////////////////////////////////////////////////////////////////
-        boats_remaining = 11;
+        boats_remaining = 17;
         op_boats_remaining = 5;
         
         turn = 0;
@@ -138,9 +139,6 @@ public class MainActivity extends ActionBarActivity {
 	        		if(y < 10 && x < 10){
 	        			if(singlePlayer){
 	        				turn++;
-	        				//////////////////////////////////////////////////////////////////////////////////////////////////
-	        				//This is a temporary piece of code, it needs to be updated to handle boats of size greater than 1
-	        				//////////////////////////////////////////////////////////////////////////////////////////////////
 	        				if(ai.aiGraph.graph[(int)x][(int)y].state != 3){
 	        					//Clearing the temp tags
 	        					for(int i = 0; i < 10; i++){
@@ -176,15 +174,36 @@ public class MainActivity extends ActionBarActivity {
 	        					setContentView(game);
 	        				}
 	        			}
-	        			else{
-	        				bGraph.touch((int)x, (int)y);
-	        				turn++;
-	        				canAttack = false;
+	        			else{//This is what happens when attacking in muliplayer
+	        				//Update the turn variable from the server
+	        				if(canAttack){
+		        				turn++;
+		        				if(ai.aiGraph.graph[(int)x][(int)y].state != 3){
+		        					//Clearing the temp tags
+		        					for(int i = 0; i < 10; i++){
+		        						for(int j = 0; j < 10; j++){
+		        							if(ai.aiGraph.graph[i][j].state == 3)
+		        								ai.aiGraph.graph[i][j].state = 0;
+		        						}
+		        					}
+		        					
+		        					ai.aiGraph.graph[(int)x][(int)y].state = 3;
+		        				}
+		        				else if(ai.aiGraph.graph[(int)x][(int)y].state == 3){
+		        					ai.aiGraph.touch((int)x, (int)y);
+			        				aAttacks[(int)x][(int)y] = true;
+		        					//Clearing the temp tags
+		        					for(int i = 0; i < 10; i++){
+		        						for(int j = 0; j < 10; j++){
+		        							if(ai.aiGraph.graph[i][j].state == 3)
+		        								ai.aiGraph.graph[i][j].state = 0;
+		        						}
+		        					}
+		        				}
+		        				//Needs to upload turn variable to server
+		        				parseUp();
+	        				}
 	        			}
-	        			//////////////////////////////////////////////////////////////
-	        			///We need to add some logic here to handle the turn system///
-	        			//////////////////////////////////////////////////////////////
-
 
 
 	        		}
@@ -250,7 +269,6 @@ public class MainActivity extends ActionBarActivity {
 		        		}
 		        		else if(!boats[2].placed && aGraph.graph[(int)x][(int)y].tag == "water"){		//Placing Air Craft Carrier
 		        			if(aGraph.graph[(int)x][(int)y].state == 3){
-		        				//boats[0].placed = aGraph.placeBoat(boats[0], (int)x, (int)y);
 		        				for(int i = 0; i < 10; i++){
 		        					for(int j = 0; j < 10; j++){
 		        						if(aGraph.graph[i][j].state == 3){
@@ -267,11 +285,57 @@ public class MainActivity extends ActionBarActivity {
 		            		place.invalidate();
 		
 		        		}
+		        		else if(!boats[3].placed && aGraph.graph[(int)x][(int)y].tag == "water"){		//Destroyer
+		        			if(aGraph.graph[(int)x][(int)y].state == 3){
+		        				//boats[0].placed = aGraph.placeBoat(boats[0], (int)x, (int)y);
+		        				for(int i = 0; i < 10; i++){
+		        					for(int j = 0; j < 10; j++){
+		        						if(aGraph.graph[i][j].state == 3){
+		        							aGraph.graph[i][j].tag = "boat";
+		        							aGraph.graph[i][j].state = 0;
+		        						}
+		        					}
+		        				}
+		        				boats[3].placed = true;
+		        			}
+		        			else{
+		        				aGraph.placeBoatTemp(boats[3], (int) x, (int)y);
+		        			}
+		            		place.invalidate();
+		        		}		        		
+		        		else if(!boats[4].placed && aGraph.graph[(int)x][(int)y].tag == "water"){		//Patrol Boat
+		        			if(aGraph.graph[(int)x][(int)y].state == 3){
+		        				//boats[0].placed = aGraph.placeBoat(boats[0], (int)x, (int)y);
+		        				for(int i = 0; i < 10; i++){
+		        					for(int j = 0; j < 10; j++){
+		        						if(aGraph.graph[i][j].state == 3){
+		        							aGraph.graph[i][j].tag = "boat";
+		        							aGraph.graph[i][j].state = 0;
+		        						}
+		        					}
+		        				}
+		        				boats[4].placed = true;
+		        			}
+		        			else{
+		        				aGraph.placeBoatTemp(boats[4], (int) x, (int)y);
+		        			}
+		            		place.invalidate();
+		        		}
 		        		//Once all boats are placed, click anywhere to begin the game
 						//NOTE: May trigger approximately when last boat is placed because the input will still be detected
 		        		else if(boats[0].placed && boats[1].placed && boats[2].placed){
 		        			Log.i("GAME", "Launched");
 		        			setContentView(game);
+		        			String temp = "";
+		        	    	for(int i = 0; i < 10; i++){
+		        	    		for(int j = 0; j < 10; j++){
+		        	    			if(aGraph.graph[i][j].tag == "water") temp += String.valueOf(0);
+		        	    			else if(aGraph.graph[i][j].tag == "boat") temp += String.valueOf(1);
+		        	    			
+		        	    		}
+		        	    	}
+		        	    	//UPLOAD temp to the server
+		        	    	
 		        			game.draw(canvas);
 		        		}
 		        	}
@@ -320,17 +384,18 @@ public class MainActivity extends ActionBarActivity {
     //Controls the functionality of the Back Button
     @Override
     public void onBackPressed() {
-		if(curView == 0 || curView == 1){
+		if(curView == 0 || curView == 1){				//This is what occurs when the back button is pressed in one of the menus
 			setContentView(R.layout.activity_main);
 			if(curView == 1)
 				curView = 0;
 		}
-		else if(curView == 2){
+		else if(curView == 2){							//This is what happens when the back button is pressed from the main game screen
+			reset();
 			setContentView(R.layout.activity_main);
 			curView = 0;
     	}
 		else{
-			setContentView(game);
+			setContentView(game);						//This is what happens when the back button is pressed on the attack screen
 			curView = 2;
 		}    }
     @Override
@@ -371,7 +436,7 @@ public class MainActivity extends ActionBarActivity {
     	
     	public aView(Context context){
     		super(context);    		
-    		this.setBackgroundResource(R.drawable.background1);
+    		this.setBackgroundResource(R.drawable.battleship_main_screen);
 
     	}
 	
@@ -400,15 +465,7 @@ public class MainActivity extends ActionBarActivity {
     		
     		for(int i = 0; i < 10; i++){
     			for(int j = 0; j < 10; j++){
-    				if(aGraph.graph[i][j].tag == "water"){
-    					lx = i * (sizeX / 10);
-    					rx = lx + (sizeX / 10);
-    					by = j * (sizeY / 12);
-    					ty = by + (sizeY / 12);
-    		    		paint.setColor(Color.BLUE);
-    					canvas.drawRect(lx, ty, rx, by, paint);
-    				}
-    				else if(aGraph.graph[i][j].tag == "boat"){
+    				if(aGraph.graph[i][j].tag == "boat"){
     					lx = i * (sizeX / 10);
     					rx = lx + (sizeX / 10);
     					by = j * (sizeY / 12);
@@ -453,7 +510,7 @@ public class MainActivity extends ActionBarActivity {
     	
     	public bView(Context context){
     		super(context);    		
-    		this.setBackgroundResource(R.drawable.background1);
+    		this.setBackgroundResource(R.drawable.battleship_main_screen);
 
     	}
 	
@@ -463,6 +520,7 @@ public class MainActivity extends ActionBarActivity {
     		//If we want to have extra things drawn on the screen, this is where the code should go
     		
     		checkWinner();
+    		parseDown();
     		
     		//This first segment is devoted to drawing the button at the bottom 
     		Paint paint = new Paint();
@@ -481,14 +539,6 @@ public class MainActivity extends ActionBarActivity {
        		for(int i = 0; i < 10; i++){
     			for(int j = 0; j < 10; j++){
     				if(singlePlayer){
-    					if(ai.aiGraph.graph[i][j].tag == "water" || ai.aiGraph.graph[i][j].tag == "boat" ){
-    						lx = i * (sizeX / 10);
-	    					rx = lx + (sizeX / 10);
-	    					by = j * (sizeY / 12);
-	    					ty = by + (sizeY / 12);
-	    		    		paint.setColor(Color.BLUE);
-	    					canvas.drawRect(lx, ty, rx, by, paint);
-	    				}
     					
 	    				if(ai.aiGraph.graph[i][j].state == 1){
 	    					lx = i * (sizeX / 10);
@@ -503,15 +553,6 @@ public class MainActivity extends ActionBarActivity {
 	    					canvas.drawRect(lx, ty, rx, by, paint);
 	    				}
 	    				
-	    				//This needs to be taken out, but it is useful for testing
-	    				if(ai.aiGraph.graph[i][j].tag == "boat"){
-    						lx = i * (sizeX / 10);
-	    					rx = lx + (sizeX / 10);
-	    					by = j * (sizeY / 12);
-	    					ty = by + (sizeY / 12);
-	    		    		paint.setColor(Color.GREEN);
-	    					canvas.drawRect(lx, ty, rx, by, paint);
-	    				}
 	    				if(ai.aiGraph.graph[i][j].state == 3){
 	    					lx = i * (sizeX / 10);
 	    					rx = lx + (sizeX / 10);
@@ -579,7 +620,7 @@ public class MainActivity extends ActionBarActivity {
     	
     	public placeView(Context context){
     		super(context);    		
-    		this.setBackgroundResource(R.drawable.background1);
+    		this.setBackgroundResource(R.drawable.battleship_main_screen);
 
     	}
 	
@@ -602,15 +643,7 @@ public class MainActivity extends ActionBarActivity {
     		
        		for(int i = 0; i < 10; i++){
     			for(int j = 0; j < 10; j++){
-    				if(aGraph.graph[i][j].tag == "water"){
-    					lx = i * (sizeX / 10);
-    					rx = lx + (sizeX / 10);
-    					by = j * (sizeY / 12);
-    					ty = by + (sizeY / 12);
-    		    		paint.setColor(Color.BLUE);
-    					canvas.drawRect(lx, ty, rx, by, paint);
-    				}
-    				else if(aGraph.graph[i][j].tag == "boat"){
+    				if(aGraph.graph[i][j].tag == "boat"){
     					lx = i * (sizeX / 10);
     					rx = lx + (sizeX / 10);
     					by = j * (sizeY / 12);
@@ -679,8 +712,28 @@ public class MainActivity extends ActionBarActivity {
 	public void different_btn(View v){
 		setContentView(R.layout.options);
 	}
-	
-	
+    ////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////Resets all the Arrays, useful for starting a new game///////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
+	void reset(){
+		for(int i = 0; i < 10; i++){
+			if(i < 5)
+				boats[i].placed = false;
+			for(int j = 0; j < 10; j++){
+				aGraph.graph[i][j].state = 0;
+				aGraph.graph[i][j].tag = "water";
+				aGraph.graph[i][j].type = "water";
+				bGraph.graph[i][j].state = 0;
+				bGraph.graph[i][j].tag = "water";
+				bGraph.graph[i][j].type = "water";
+				aAttacks[i][j] = false;
+				bAttacks[i][j] = false;
+			}
+		}
+	}
+
     ////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////
     //////////This is the segment of code dedicated to storing data on the game state///////
@@ -787,9 +840,14 @@ public class MainActivity extends ActionBarActivity {
 			Log.i("placeBoat","Start");
     		boolean success = true;
     		
+    		//Clearing all temp value from the graph
     		for(int i = 0; i < 10; i++){
     			for(int j = 0; j < 10; j++){
+    				//If the square was a temp before, ensure that its type is set to water
+    				if(graph[i][j].state == 3)
+    					graph[i][j].type = "water";
     				graph[i][j].state = 0;
+    				
     			}
     		}
     		
@@ -847,7 +905,9 @@ public class MainActivity extends ActionBarActivity {
 	    			switch(boat.direction){
 	    				case 0:						//Direction = UP
 	    					graph[x][y-i].state = 3;
-	    					tempStr = "Boat Piece: " + String.valueOf(i) + " placed. State: " + String.valueOf(graph[x][y-i].state);
+	    					tempStr = boat.type + String.valueOf(i);
+	    					graph[x][y-i].type = tempStr;
+	    					tempStr = "Boat Piece: " + String.valueOf(i) + " placed.State: " + String.valueOf(graph[x][y-i].state);
 	    		    		Log.i("placeBoat", tempStr);
 	    					break;
 	    				case 1:						//Direction = RIGHT
@@ -870,15 +930,69 @@ public class MainActivity extends ActionBarActivity {
     	}
     	
     }
+    ////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
+    ////////////These functions send and receive information from the server////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
+    public void parseUp(){
+    	String temp = "";
+    	for(int i = 0; i < 10; i++){
+    		for(int j = 0; j < 10; j++){
+    			if(aAttacks[i][j]) temp += String.valueOf(1);
+    			else temp += String.valueOf(0);
+    		}
+    	}
+    	
+    	//SEND TEMP TO THE SERVER
+    	
+    }
+    
+    public void parseDown(){
+    	//GET TEMP STRING FROM SERVER
+    	String temp = "";
+    	
+    	//Constructing a string that represents the most recent version of the enemies attack array
+    	String temp1 = "";
+    	for(int i = 0; i < 10; i++){
+    		for(int j = 0; j < 10; j++){
+    			if(bAttacks[i][j]) temp1 += String.valueOf(1);
+    			else temp1 += String.valueOf(0);
+    		}
+    	}
+    	
+    	//If that version is not the same as the version downloaded from the server, update the local version
+    	if(temp1 != temp){
+    		int tempCounter = 0;
+	    	for(int i = 0; i < 10; i++){
+	    		for(int j = 0; j < 10; j++){
+	    			int tempI = i;
+	    			int tempJ = j;
+	    			if(tempI == 0 && j > 0) tempI = 10;
+	    			if(tempJ == 0) tempJ = 1;
+	    			
+	    			if(temp.charAt(tempI * tempJ) == '0'){ bAttacks[i][j] = false;}
+	    			else if(temp.charAt(tempI * tempJ) == '1'){ bAttacks[i][j] = true;}
+	    			
+	    			if(bAttacks[i][j] && aGraph.graph[i][j].tag == "boat"){
+	    				tempCounter++;
+	    			}
+	    		}
+	    	}
+	    	boats_remaining = 17 - tempCounter;
+    	}
+    }
     
     //Classic CS node data type
     //Sits in a graph, holds information
     public class Node{
     	int x,y;			//Coordinates of the node [0-9][0-9]
     	int state;			//0 = Nothing, 1 = hit   // 3 = temp      I wanted this to be an int in case we get into complex types
-    	String tag;			//
+    	String tag;			//This is a string representation of the state of a node. Used to denote whether the node is water, boat, or temp
+    	String type;		//What type of boat is this node? 
     	public Node(int x, int y){
     		tag = "water";
+    		type = "water";
     		this.x = x;
     		this.y = y;
     		state = 0;
@@ -906,6 +1020,8 @@ public class MainActivity extends ActionBarActivity {
     	Boat battle_ship;
     	Boat submarine;
     	Boat air_craft_carrier;
+    	Boat destroyer;
+    	Boat patrol;
     	
     	//Constructor
     	AI(){
@@ -946,7 +1062,7 @@ public class MainActivity extends ActionBarActivity {
     		/////////////////////////////////////////////////////////////////////////////////
     		//NOTE: THIS NEEDS TO BE CHANGED TO 17 WHEN THERE ARE 5 BOATS IN THE GAME////////
     		/////////////////////////////////////////////////////////////////////////////////
-    		boats_remaining = 11;			
+    		boats_remaining = 17;			
 			
 			for(int it = 0; i < 10; i++){
 				for(int j = 0; j < 10; j++){
@@ -957,7 +1073,7 @@ public class MainActivity extends ActionBarActivity {
 
    			//Generating a random position for the battle_ship
        		Log.i("AI","Attempting to make a boat");
-    		battle_ship = new Boat(3,"battleship", r.nextInt(3) + 0);	
+    		battle_ship = new Boat(4,"battleship", r.nextInt(3) + 0);	
        		while(!battle_ship.placed){
        			tempX = (r.nextInt(9) + 0);
    				tempY = (r.nextInt(9) + 0);
@@ -975,8 +1091,20 @@ public class MainActivity extends ActionBarActivity {
    			
    			//Generating a random position for the Air Craft Carrier
    			air_craft_carrier = new Boat(5, "aircraftcarrier", r.nextInt(3) + 0);
-
-   			
+   			while(!air_craft_carrier.placed){
+       			tempX = (r.nextInt(9) + 0);
+   				tempY = (r.nextInt(9) + 0);
+   				air_craft_carrier.placed = aiGraph.placeBoat(air_craft_carrier, tempX, tempY);
+   			}
+   			//Generating a random position for the Destroyer
+   			air_craft_carrier = new Boat(3, "destroyer", r.nextInt(3) + 0);
+   			while(!air_craft_carrier.placed){
+       			tempX = (r.nextInt(9) + 0);
+   				tempY = (r.nextInt(9) + 0);
+   				air_craft_carrier.placed = aiGraph.placeBoat(air_craft_carrier, tempX, tempY);
+   			}
+   			//Generating a random position for the Patrol Boat
+   			air_craft_carrier = new Boat(2, "patrol", r.nextInt(3) + 0);
    			while(!air_craft_carrier.placed){
        			tempX = (r.nextInt(9) + 0);
    				tempY = (r.nextInt(9) + 0);
