@@ -21,33 +21,37 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 
 public class MainActivity extends ActionBarActivity {
-	//The graph of the players area
+	
+	//################################################## Global Variables ######################################################\\
+
+	//TAGS\\
+	private static final String LOG_TAG = "Main";
+
+	//Board Variables\\
 	public Graph aGraph;									//A graph of the players ship positions
 	public boolean[][] aAttacks;							//A graph of the positions that the player has attacked
-	//The graph of the opponents area
 	public Graph bGraph;									//A graph of the opponents ship positions
 	public boolean[][] bAttacks;							//Keeps track of all of the attacks the opponent has made
+	public Boat[] boats;									//An array that stores all of the players boats
+
+	//Game Variables\\
+	public int turn;
 	public boolean canAttack;								//Determines whether or not it is the players turn
 	public int boats_remaining, op_boats_remaining;			//The number of undestroyed ships that the player currently has
-	
-	public int turn;
-	public int sizeX, sizeY;				//Integers that represent the size of the screen the app is being run on
-	//The main menu
-	public View main;						//The main menu screen
-	//The main game area
-	public aView game;						//The main in game view the player sees when they are viewing their half of the board
-	//The attack view
-	public bView attack;					//The view the player sees when they are choosing the location for their attacks
-	//The place view
-	public placeView place;					//The view that allows the player to place their ships
-	
-	public int curView;						//Keeps track of which screen the user is currently on 0 = main menu, 2 = game
-	public boolean singlePlayer;			//Determines the source of the opponent (another player == false, AI == true) 
-	public AI ai;							//Artificial Intelligence that controls opponent during singlePlayer
-	public Boat[] boats;					//An array that stores all of the players boats
-	Canvas canvas;
+	public boolean singlePlayer;							//Determines the source of the opponent (another player == false, AI == true)
+	public AI ai;											//Artificial Intelligence that controls opponent during singlePlayer
 
+	//Screen/View Variables\\
+	public int sizeX, sizeY;				//Integers that represent the size of the screen the app is being run on
+	public View main;						//The main menu screen
+	public aView game;						//The main in game view the player sees when they are viewing their half of the board
+	public bView attack;					//The view the player sees when they are choosing the location for their attacks
+	public placeView place;					//The view that allows the player to place their ships
+	public int curView;						//Keeps track of which screen the user is currently on 0 = main menu, 2 = game 
+	Canvas canvas;
 	
+	
+		
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -380,24 +384,6 @@ public class MainActivity extends ActionBarActivity {
         return true;
     }
 
-    //Controls the functionality of the back button
-    //Controls the functionality of the Back Button
-    @Override
-    public void onBackPressed() {
-		if(curView == 0 || curView == 1){				//This is what occurs when the back button is pressed in one of the menus
-			setContentView(R.layout.activity_main);
-			if(curView == 1)
-				curView = 0;
-		}
-		else if(curView == 2){							//This is what happens when the back button is pressed from the main game screen
-			reset();
-			setContentView(R.layout.activity_main);
-			curView = 0;
-    	}
-		else{
-			setContentView(game);						//This is what happens when the back button is pressed on the attack screen
-			curView = 2;
-		}    }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -410,18 +396,14 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
     
-    public void checkWinner(){
-    	if(boats_remaining == 0)
-    		setContentView(R.layout.lose);
-    	if(singlePlayer)	
-    		if(ai.boats_remaining == 0)
-    			setContentView(R.layout.win);
-    	else{
-    		if(op_boats_remaining == 0)
-    			setContentView(R.layout.win);
-    	}
-    		
-    }
+    
+    
+    //#########################################################################################################################\\
+   	//#########################################################################################################################\\
+    //#################################################### Board Views ########################################################\\
+  	//#########################################################################################################################\\
+   	//#########################################################################################################################\\
+    
     //This is my view class that I created, it will allow us to dynamically determine our users screen size
     //and load the view accordingly.
     //Additionally this is necessary in order to do work on the canvas (the way that the background and sensor system is
@@ -668,14 +650,16 @@ public class MainActivity extends ActionBarActivity {
     	}
 	
 	}
+       
+   
+
+   //#########################################################################################################################\\
+   //#########################################################################################################################\\
+   //############################################### Button Functions ########################################################\\
+   //#########################################################################################################################\\
+   //#########################################################################################################################\\
     
-    
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ///////////Creating Functions that correspond to various buttons////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
-    
+   
 	public void main_start_btn(View v){		
         setContentView(R.layout.setup_game);
         curView = 1;
@@ -692,53 +676,16 @@ public class MainActivity extends ActionBarActivity {
 			setContentView(place);
 		}
 	}
-
-	public void back_btn(View v){
-		if(curView == 0 || curView == 1){
-			setContentView(R.layout.activity_main);
-			if(curView == 1)
-				curView = 0;
-		}
-		else{
-			setContentView(game);
-			curView = 2;
-		}
-	}
+    
+   
 	
-	public void options_single_player(View v){
-		singlePlayer = !singlePlayer;
-	}
+	//#########################################################################################################################\\
+   	//#########################################################################################################################\\
+    //############################################ Storing Data on Game Data ##################################################\\
+  	//#########################################################################################################################\\
+   	//#########################################################################################################################\\
 	
-	public void different_btn(View v){
-		setContentView(R.layout.options);
-	}
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////Resets all the Arrays, useful for starting a new game///////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
-	void reset(){
-		for(int i = 0; i < 10; i++){
-			if(i < 5)
-				boats[i].placed = false;
-			for(int j = 0; j < 10; j++){
-				aGraph.graph[i][j].state = 0;
-				aGraph.graph[i][j].tag = "water";
-				aGraph.graph[i][j].type = "water";
-				bGraph.graph[i][j].state = 0;
-				bGraph.graph[i][j].tag = "water";
-				bGraph.graph[i][j].type = "water";
-				aAttacks[i][j] = false;
-				bAttacks[i][j] = false;
-			}
-		}
-	}
-
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
-    //////////This is the segment of code dedicated to storing data on the game state///////
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
+	
     public class Graph{
     	Node[][] graph;
     	public Graph(){
@@ -930,79 +877,87 @@ public class MainActivity extends ActionBarActivity {
     	}
     	
     }
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ////////////These functions send and receive information from the server////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
-    public void parseUp(){
-    	String temp = "";
-    	for(int i = 0; i < 10; i++){
-    		for(int j = 0; j < 10; j++){
-    			if(aAttacks[i][j]) temp += String.valueOf(1);
-    			else temp += String.valueOf(0);
-    		}
-    	}
-    	
-    	//SEND TEMP TO THE SERVER
-    	
-    }
     
-    public void parseDown(){
-    	//GET TEMP STRING FROM SERVER
-    	String temp = "";
-    	
-    	//Constructing a string that represents the most recent version of the enemies attack array
-    	String temp1 = "";
-    	for(int i = 0; i < 10; i++){
-    		for(int j = 0; j < 10; j++){
-    			if(bAttacks[i][j]) temp1 += String.valueOf(1);
-    			else temp1 += String.valueOf(0);
-    		}
-    	}
-    	
-    	//If that version is not the same as the version downloaded from the server, update the local version
-    	if(temp1 != temp){
-    		int tempCounter = 0;
-	    	for(int i = 0; i < 10; i++){
-	    		for(int j = 0; j < 10; j++){
-	    			int tempI = i;
-	    			int tempJ = j;
-	    			if(tempI == 0 && j > 0) tempI = 10;
-	    			if(tempJ == 0) tempJ = 1;
-	    			
-	    			if(temp.charAt(tempI * tempJ) == '0'){ bAttacks[i][j] = false;}
-	    			else if(temp.charAt(tempI * tempJ) == '1'){ bAttacks[i][j] = true;}
-	    			
-	    			if(bAttacks[i][j] && aGraph.graph[i][j].tag == "boat"){
-	    				tempCounter++;
-	    			}
-	    		}
-	    	}
-	    	boats_remaining = 17 - tempCounter;
-    	}
-    }
     
-    //Classic CS node data type
-    //Sits in a graph, holds information
-    public class Node{
-    	int x,y;			//Coordinates of the node [0-9][0-9]
-    	int state;			//0 = Nothing, 1 = hit   // 3 = temp      I wanted this to be an int in case we get into complex types
-    	String tag;			//This is a string representation of the state of a node. Used to denote whether the node is water, boat, or temp
-    	String type;		//What type of boat is this node? 
-    	public Node(int x, int y){
-    		tag = "water";
-    		type = "water";
-    		this.x = x;
-    		this.y = y;
-    		state = 0;
-    	}	
+    
+    
+    
+    
+    
+    
+    //#########################################################################################################################\\
+   	//#########################################################################################################################\\
+    //################################################# Ship/Boat: ADT ########################################################\\
+  	//#########################################################################################################################\\
+   	//#########################################################################################################################\\
+    
+    
+    //Represents a boat, basically used to help construct the graph
+    //Can be applied to any type of boat/ship found in the game battleship
+    public class Boat{
+    	int length;										//How many squares the boat occupies
+    	String type;									//What type of ship is this? Battleship? Submarine? etc...
+    	int direction;									//Which direction is the ship facing 0 = up, 1 = right, 2 = down, 3 = left 
+    	int hits_till_sunk;								//The number of shots remaining until the boat sinks
+    	Coord pos;
+    	boolean placed;
+    	Boat(int length, String type, int direction){
+    		this.length = length;
+    		placed = false;
+    		this.type = type;
+    		this.direction = direction;
+    		this.hits_till_sunk = length;
+    	}
     }
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////This ADT is representative of an AI Opponent////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
+ 	
+ 	//Controls the functionality of the back button
+    //Controls the functionality of the Back Button
+    @Override
+    public void onBackPressed() {
+		if(curView == 0 || curView == 1){				//This is what occurs when the back button is pressed in one of the menus
+			setContentView(R.layout.activity_main);
+			if(curView == 1)
+				curView = 0;
+		}
+		else if(curView == 2){							//This is what happens when the back button is pressed from the main game screen
+			reset();
+			setContentView(R.layout.activity_main);
+			curView = 0;
+    	}
+		else{
+			setContentView(game);						//This is what happens when the back button is pressed on the attack screen
+			curView = 2;
+		}  
+	}
+
+ 	public void back_btn(View v){
+ 		if(curView == 0 || curView == 1){
+ 			setContentView(R.layout.activity_main);
+ 			if(curView == 1)
+ 				curView = 0;
+ 		}
+ 		else{
+ 			setContentView(game);
+ 			curView = 2;
+ 		}
+ 	}
+ 	
+ 	public void options_single_player(View v){
+ 		singlePlayer = !singlePlayer;
+ 	}
+ 	
+ 	public void different_btn(View v){
+ 		setContentView(R.layout.options);
+ 	}
+ 	
+ 	
+ 	
+ 	//#########################################################################################################################\\
+   	//#########################################################################################################################\\
+    //############################################### AI Opponent: ADT ########################################################\\
+  	//#########################################################################################################################\\
+   	//#########################################################################################################################\\
+
     
     //AI begins with a list of all 100 unique moves in a random order. This is intended to be read in one instruction
     //at a time to simulate actual gameplay
@@ -1068,8 +1023,7 @@ public class MainActivity extends ActionBarActivity {
 				for(int j = 0; j < 10; j++){
 					aiGraph.graph[it][j] = new Node(it, j);
 				}
-			}
-			
+			}			
 
    			//Generating a random position for the battle_ship
        		Log.i("AI","Attempting to make a boat");
@@ -1201,6 +1155,7 @@ public class MainActivity extends ActionBarActivity {
     	}
     	
     }
+    
     //A simple ADT that holds two integers
     public class Coord{
     	public int x;
@@ -1210,26 +1165,116 @@ public class MainActivity extends ActionBarActivity {
     		this.y = y;
     	}
     }
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////This ADT is representative of a ship or boat////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
-    //Represents a boat, basically used to help construct the graph
-    //Can be applied to any type of boat/ship found in the game battleship
-    public class Boat{
-    	int length;										//How many squares the boat occupies
-    	String type;									//What type of ship is this? Battleship? Submarine? etc...
-    	int direction;									//Which direction is the ship facing 0 = up, 1 = right, 2 = down, 3 = left 
-    	int hits_till_sunk;								//The number of shots remaining until the boat sinks
-    	Coord pos;
-    	boolean placed;
-    	Boat(int length, String type, int direction){
-    		this.length = length;
-    		placed = false;
-    		this.type = type;
-    		this.direction = direction;
-    		this.hits_till_sunk = length;
+   
+    
+    //#########################################################################################################################\\
+	//#########################################################################################################################\\
+	//################################################# Server Functions ######################################################\\
+	//#########################################################################################################################\\
+	//#########################################################################################################################\\
+    
+    
+    public void parseUp(){
+    	String temp = "";
+    	for(int i = 0; i < 10; i++){
+    		for(int j = 0; j < 10; j++){
+    			if(aAttacks[i][j]) temp += String.valueOf(1);
+    			else temp += String.valueOf(0);
+    		}
+    	}
+    	
+    	//SEND TEMP TO THE SERVER
+    	
+    }
+    
+    public void parseDown(){
+    	//GET TEMP STRING FROM SERVER
+    	String temp = "";
+    	
+    	//Constructing a string that represents the most recent version of the enemies attack array
+    	String temp1 = "";
+    	for(int i = 0; i < 10; i++){
+    		for(int j = 0; j < 10; j++){
+    			if(bAttacks[i][j]) temp1 += String.valueOf(1);
+    			else temp1 += String.valueOf(0);
+    		}
+    	}
+    	
+    	//If that version is not the same as the version downloaded from the server, update the local version
+    	if(temp1 != temp){
+    		int tempCounter = 0;
+	    	for(int i = 0; i < 10; i++){
+	    		for(int j = 0; j < 10; j++){
+	    			int tempI = i;
+	    			int tempJ = j;
+	    			if(tempI == 0 && j > 0) tempI = 10;
+	    			if(tempJ == 0) tempJ = 1;
+	    			
+	    			if(temp.charAt(tempI * tempJ) == '0'){ bAttacks[i][j] = false;}
+	    			else if(temp.charAt(tempI * tempJ) == '1'){ bAttacks[i][j] = true;}
+	    			
+	    			if(bAttacks[i][j] && aGraph.graph[i][j].tag == "boat"){
+	    				tempCounter++;
+	    			}
+	    		}
+	    	}
+	    	boats_remaining = 17 - tempCounter;
     	}
     }
+    
+    //Classic CS node data type
+    //Sits in a graph, holds information
+    public class Node{
+    	int x,y;			//Coordinates of the node [0-9][0-9]
+    	int state;			//0 = Nothing, 1 = hit   // 3 = temp      I wanted this to be an int in case we get into complex types
+    	String tag;			//This is a string representation of the state of a node. Used to denote whether the node is water, boat, or temp
+    	String type;		//What type of boat is this node? 
+    	public Node(int x, int y){
+    		tag = "water";
+    		type = "water";
+    		this.x = x;
+    		this.y = y;
+    		state = 0;
+    	}	
+    }
+    
+    
+    
+    //#########################################################################################################################\\
+   	//#########################################################################################################################\\
+    //################################################ Game Functions #########################################################\\
+  	//#########################################################################################################################\\
+   	//#########################################################################################################################\\
+	
+    
+    public void checkWinner(){
+    	if(boats_remaining == 0)
+    		setContentView(R.layout.lose);
+    	if(singlePlayer)	
+    		if(ai.boats_remaining == 0)
+    			setContentView(R.layout.win);
+    	else{
+    		if(op_boats_remaining == 0)
+    			setContentView(R.layout.win);
+    	}
+    		
+    }
+	
+	void reset(){
+		for(int i = 0; i < 10; i++){
+			if(i < 5)
+				boats[i].placed = false;
+			for(int j = 0; j < 10; j++){
+				aGraph.graph[i][j].state = 0;
+				aGraph.graph[i][j].tag = "water";
+				aGraph.graph[i][j].type = "water";
+				bGraph.graph[i][j].state = 0;
+				bGraph.graph[i][j].tag = "water";
+				bGraph.graph[i][j].type = "water";
+				aAttacks[i][j] = false;
+				bAttacks[i][j] = false;
+			}
+		}
+	}
+	
 }

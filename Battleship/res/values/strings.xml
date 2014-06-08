@@ -8,7 +8,9 @@
     <string name="different">A Totally Different Button</string>
     <string name="back">Back</string>
     <string name="Options">Options</string>
-    <string name="singlePlayer">Single Player?</string>
+    <string name="singlePlayer">Single Player</string>
     <string name="Setup">Setup</string>
+    <string name="gameOverL">Game Over\n You Lose</string>
+    <string name="multiplayer">Multiplayer</string>
     
 </resources>

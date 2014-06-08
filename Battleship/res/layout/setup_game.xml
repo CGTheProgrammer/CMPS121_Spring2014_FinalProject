@@ -8,15 +8,25 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" >
 
-        <Button
-            android:id="@+id/backBtn"
+        <CheckBox
+            android:id="@+id/singlePlayer_checkBox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
+            android:layout_below="@+id/setupView"
             android:layout_centerHorizontal="true"
-            android:onClick="back_btn"
-            android:layout_marginBottom="49dp"
-            android:text="@string/back" />
+            android:layout_marginTop="68dp"
+            android:onClick="options_single_player"
+            android:text="@string/singlePlayer" />
+
+        <CheckBox
+            android:id="@+id/CheckBox01"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@+id/singlePlayer_checkBox"
+            android:layout_below="@+id/singlePlayer_checkBox"
+            android:layout_marginTop="30dp"
+            android:onClick="options_single_player"
+            android:text="@string/multiplayer" />
 
         <TextView
             android:id="@+id/setupView"
@@ -24,7 +34,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="42dp"
             android:text="@string/Setup"
             android:textAppearance="?android:attr/textAppearanceLarge" />
 
@@ -33,19 +43,21 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_above="@+id/backBtn"
-            android:onClick="setup_start_btn"
             android:layout_centerHorizontal="true"
-            android:layout_marginBottom="24dp"
-            android:text="@string/start" />
+            android:onClick="setup_start_btn"
+            android:text="@string/start"
+            android:width="150dp"
+            android:textSize="25sp" />
 
-        <CheckBox
-            android:id="@+id/singlePlayer_checkBox"
+        <Button
+            android:id="@+id/backBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
-            android:layout_marginBottom="64dp"
-            android:onClick="options_single_player"
-            android:text="@string/singlePlayer" />
+            android:layout_marginBottom="23dp"
+            android:onClick="back_btn"
+            android:text="@string/back" />
 
     </RelativeLayout>
 
