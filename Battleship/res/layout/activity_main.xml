@@ -10,25 +10,35 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" >
 
-        <Button
-            android:id="@+id/startBtn"
+        <ImageView
+            android:id="@+id/singlePlayerBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
+            android:onClick="main_start_single"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="77dp"
-            android:onClick="main_start_btn"
-            android:text="@string/start" />
+            android:layout_marginTop="82dp"
+            android:src="@drawable/battleship_single_btn" />
 
-        <Button
-            android:id="@+id/otherButton"
+        <ImageView
+            android:id="@+id/multiPlayerBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/startBtn"
-            android:onClick="different_btn"
+            android:layout_alignLeft="@+id/singlePlayerBtn"
+            android:layout_below="@+id/singlePlayerBtn"
+            android:onClick="main_start_multi"
+            android:layout_marginTop="26dp"
+            android:src="@drawable/battleship_multi_btn" />
+
+        <ImageView
+            android:id="@+id/creditsBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/multiPlayerBtn"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="64dp"
-            android:text="@string/different" />
+            android:onClick = "different_btn"
+            android:layout_marginTop="68dp"
+            android:src="@drawable/battleship_credits_btn" />
 
     </RelativeLayout>
 

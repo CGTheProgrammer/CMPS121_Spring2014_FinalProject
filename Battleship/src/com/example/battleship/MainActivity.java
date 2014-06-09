@@ -1,5 +1,7 @@
 package com.example.battleship;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.Random;
 
 import android.content.Context;
@@ -20,6 +22,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+
+import com.google.gson.Gson;
 
 public class MainActivity extends ActionBarActivity {
 	//The graph of the players area
@@ -171,9 +175,15 @@ public class MainActivity extends ActionBarActivity {
 	        			        		
 	        		//If the player pushes the button at the bottom of the screen, change view
 	        		if(y >= 10){
-	        			setContentView(attack);
-	        			curView = 3;
-	        			attack.draw(canvas);
+	        			if(x >= 5){
+		        			setContentView(attack);
+		        			curView = 3;
+		        			attack.draw(canvas);
+	        			}
+	        			else{
+	        				setContentView(R.layout.activity_main);
+	        				curView = 0;
+	        			}
 	        		}
 	        		game.invalidate();
         		}
@@ -395,7 +405,7 @@ public class MainActivity extends ActionBarActivity {
 	        		
 	        		
 	        		//Determines which boat is being placed, I wish I could write this as a switch statement... but I can't
-		        	if(y < 10 && y > 0){
+		        	if(y < 10 && y >= 0){
 		        		if(!boats[0].placed && aGraph.graph[(int)x][(int)y].tag == "water"){			//Placing Battleship
 		        			if(aGraph.graph[(int)x][(int)y].state == 3){
 		        				//boats[0].placed = aGraph.placeBoat(boats[0], (int)x, (int)y);
@@ -818,7 +828,7 @@ public class MainActivity extends ActionBarActivity {
 		        		}
 		        		//Once all boats are placed, click anywhere to begin the game
 						//NOTE: May trigger approximately when last boat is placed because the input will still be detected
-		        		else if(boats[0].placed && boats[1].placed && boats[2].placed){
+		        		/*else if(boats[0].placed && boats[1].placed && boats[2].placed){
 		        			Log.i("GAME", "Launched");
 		        			setContentView(game);
 		        			String temp = "";
@@ -832,32 +842,40 @@ public class MainActivity extends ActionBarActivity {
 		        	    	//UPLOAD temp to the server
 		        	    	
 		        			game.draw(canvas);
-		        		}
+		        		}*/
 		        	}
-		        	else{		//Handling Rotation
+		        	else{		
 		        		x = event.getX();
-		        		if(x >= (sizeX / 2)){
+		        		if(x >= (sizeX / 2)){					//Rotation Button
 		        			Log.i("Rotate","Turning Right");
 		        			int i = 0;
-		        			while(boats[i].placed && i < 3)
+		        			while(boats[i].placed && i < 5)
 		        				i++;
-		        			if(i >= 3)
+		        			if(i >= 5)
 		        				return false;
 		        			boats[i].direction++;
 		        			if(boats[i].direction >= 4)
-		        				boats[i].direction = 0;		        		}
-		        		else{
-		        			Log.i("Rotate","Turning Left");
-		        			int i = 0;
-		        			while(boats[i].placed && i < 3)
-		        				i++;
-		        			if(i >= 3)
-		        				return false;
-
-		        			boats[i].direction--;
-		        			if(boats[i].direction < 0)
-		        				boats[i].direction = 3;
+		        				boats[i].direction = 0;		        		
 		        		}
+		        		else{									//Confirm Button
+		        			if(boats[0].placed && boats[1].placed && boats[2].placed){
+			        			Log.i("GAME", "Launched");
+			        			setContentView(game);
+			        			String temp = "";
+			        	    	for(int i = 0; i < 10; i++){
+			        	    		for(int j = 0; j < 10; j++){
+			        	    			if(aGraph.graph[i][j].tag == "water") temp += String.valueOf(0);
+			        	    			else if(aGraph.graph[i][j].tag == "boat") temp += String.valueOf(1);
+			        	    			
+			        	    		}
+			        	    	}
+			        	    	if(!singlePlayer)
+			        	    		downloadGame();
+			        	    	
+			        			game.draw(canvas);
+		        			}
+		        		}
+
 		        	}
         		}
         		
@@ -928,6 +946,9 @@ public class MainActivity extends ActionBarActivity {
     	Button attack;
     	Paint paint = new Paint();
     	float lx, rx, ty, by;
+    	Bitmap[][] ships;
+    	Bitmap main_menu, attack_btn;
+
     	
     	public aView(Context context){
     		super(context);    		
@@ -940,7 +961,9 @@ public class MainActivity extends ActionBarActivity {
     		super.onDraw(canvas);
     		//If we want to have extra things drawn on the screen, this is where the code should go
 
-
+    		ships = new Bitmap[10][10];
+    		if(!singlePlayer)
+    			uploadGame();
     		
     		checkWinner();
     		
@@ -957,160 +980,189 @@ public class MainActivity extends ActionBarActivity {
     		paint.setColor(Color.BLACK);
     		paint.setTextSize(20);
     		canvas.drawText("Go To ATTACK!", rx/2, ((ty + by) / 2), paint);
+    		int w = (int)(getHeight() * 0.25);
+    		int h = (int)(getWidth() / 2);
+    		main_menu = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_main_menu_btn);
+    		attack_btn = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_attack_btn);
+    		if(h > 0 && w > 0){
+    			main_menu = Bitmap.createScaledBitmap(main_menu, h, w, false);
+    			attack_btn = Bitmap.createScaledBitmap(attack_btn, h, w, false);
+    			canvas.drawBitmap(main_menu, (float)0,(float)(getHeight() * 0.75), null);
+    			canvas.drawBitmap(attack_btn, (float)getWidth() / 2,(float)(getHeight() * 0.75), null);
+    		}
     		
+    		
+    		h = (int)(getHeight() * 0.0666);
+    		w = (int)(getWidth() / 10);
     		
     		for(int i = 0; i < 10; i++){
     			for(int j = 0; j < 10; j++){
-    				/*if(aGraph.graph[i][j].tag == "boat"){		//Temp Rendering of Boats
-    					lx = i * (sizeX / 10);
-    					rx = lx + (sizeX / 10);
-    					by = (float)((j * (sizeY*0.066)) + (sizeY * 0.083));
-    					ty = (float)(by - sizeY * 0.066);
-    					paint.setColor(Color.GREEN);
-    					canvas.drawRect(lx, ty, rx, by, paint);
-    				}*/
-
+    				float xPos = 0;
+    				float yPos = 0;
+    				switch(i){
+	    				case 0:
+	    					xPos = (float)(sizeX * 0.0);
+	    					break;
+	    				case 1:
+	    					xPos = (float)(sizeX * 0.10);
+	    					break;
+	    				case 2:
+	    					xPos = (float)(sizeX * 0.20);
+	    					break;
+	    				case 3:
+	    					xPos = (float)(sizeX * 0.30);
+	    					break;
+	    				case 4:
+	    					xPos = (float)(sizeX * 0.40);
+	    					break;
+	    				case 5:
+	    					xPos = (float)(sizeX * 0.50);
+	    					break;
+	    				case 6:
+	    					xPos = (float)(sizeX * 0.60);
+	    					break;
+	    				case 7:
+	    					xPos = (float)(sizeX * 0.70);
+	    					break;
+	    				case 8:
+	    					xPos = (float)(sizeX * 0.80);
+	    					break;
+	    				case 9:
+	    					xPos = (float)(sizeX * 0.90);
+	    					break;
+	    				default:
+	    					break;
+    				}
+    				switch(j){
+    				case 0:
+    					yPos = (float)(sizeY * 0.083);
+    					break;
+    				case 1:
+    					//yPos = (float)(sizeY * 0.15);
+    					yPos = (float)(sizeY * 0.13);
+    					break;
+    				case 2:
+    					//yPos = (float)(sizeY * 0.215);
+    					yPos = (float)(sizeY * 0.188);
+    					break;
+    				case 3:
+    					//yPos = (float)(sizeY * 0.282);
+    					yPos = (float)(sizeY * 0.248);
+    					break;
+    				case 4:
+    					//yPos = (float)(sizeY * 0.35);
+    					yPos = (float)(sizeY * 0.305);
+    					break;
+    				case 5:
+    					//yPos = (float)(sizeY * 0.415);
+    					yPos = (float)(sizeY * 0.365);
+    					break;
+    				case 6:
+    					//yPos = (float)(sizeY * 0.4825);
+    					yPos = (float)(sizeY * 0.425);
+    					break;
+    				case 7:
+    					//yPos = (float)(sizeY * 0.55);
+    					yPos = (float)(sizeY * 0.48);
+    					break;
+    				case 8:
+    					//yPos = (float)(sizeY * 0.618);
+    					yPos = (float)(sizeY * 0.54);
+    					break;
+    				case 9:
+    					yPos = (float)(sizeY * 0.60);
+    					break;
+    				default:
+    					break;
+    				}
     				if(aGraph.graph[i][j].type == "battleship00"){
-    					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_front);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					if(h > 0 && w > 0){
-    						ship = Bitmap.createScaledBitmap(ship, h, w, false);
-    						canvas.drawBitmap(ship, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
-    					}
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_front);
+    		    		if(h > 0 && w > 0){
+    		    			ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    						canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
+    		    		}
     				}
     				else if(aGraph.graph[i][j].type == "battleship01"){
-    					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_middle);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					if(h > 0 && w > 0){
-    						Bitmap ship1 = Bitmap.createScaledBitmap(ship, h, w, false);
-    						canvas.drawBitmap(ship1, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
-    					}
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_middle);
+    		    		if(h > 0 && w > 0){
+    		    			ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    						canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
+    		    		}
     				}
     				else if(aGraph.graph[i][j].type == "battleship02"){
-    					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_back);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					if(h > 0 && w > 0){
-    						Bitmap ship1 = Bitmap.createScaledBitmap(ship, h, w, false);
-    						canvas.drawBitmap(ship1, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
-    					}
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_back);
+    		    		if(h > 0 && w > 0){
+    		    			ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    						canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
+    		    		}
     				}
     				
     				else if(aGraph.graph[i][j].type == "battleship10"){
-    					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_front3);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					if(h > 0 && w > 0){
-    						ship = Bitmap.createScaledBitmap(ship, h, w, false);
-    						canvas.drawBitmap(ship, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
-    					}
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_front3);
+    		    		if(h > 0 && w > 0){
+    		    			ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    						canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
+    		    		}
     				}
     				else if(aGraph.graph[i][j].type == "battleship11"){
-    					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_middle1);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					if(h > 0 && w > 0){
-    						Bitmap ship1 = Bitmap.createScaledBitmap(ship, h, w, false);
-    						canvas.drawBitmap(ship1, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
-    					}
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_middle1);
+    		    		if(h > 0 && w > 0){
+    		    			ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    						canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
+    		    		}
     				}
     				else if(aGraph.graph[i][j].type == "battleship12"){
-    					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_back1);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					if(h > 0 && w > 0){
-    						Bitmap ship1 = Bitmap.createScaledBitmap(ship, h, w, false);
-    						canvas.drawBitmap(ship1, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
-    					}
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_back1);
+    		    		if(h > 0 && w > 0){
+    		    			ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    						canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
+    		    		}
     				}
     				
     				else if(aGraph.graph[i][j].type == "battleship20"){
-    					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_front);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					if(h > 0 && w > 0){
-    						ship = Bitmap.createScaledBitmap(ship, h, w, false);
-    						canvas.drawBitmap(ship, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
-    					}
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_front);
+    		    		if(h > 0 && w > 0){
+    		    			ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    						canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
+    		    		}
     				}
     				else if(aGraph.graph[i][j].type == "battleship21"){
-    					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_middle);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					if(h > 0 && w > 0){
-    						Bitmap ship1 = Bitmap.createScaledBitmap(ship, h, w, false);
-    						canvas.drawBitmap(ship1, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
-    					}
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_middle);
+    		    		if(h > 0 && w > 0){
+    		    			ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    						canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
+    		    		}
     				}
     				else if(aGraph.graph[i][j].type == "battleship22"){
-    					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_back);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					if(h > 0 && w > 0){
-    						Bitmap ship1 = Bitmap.createScaledBitmap(ship, h, w, false);
-    						canvas.drawBitmap(ship1, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
-    					}
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_back);
+    		    		if(h > 0 && w > 0){
+    		    			ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    						canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
+    		    		}
     				}
     				else if(aGraph.graph[i][j].type == "battleship30"){
-    					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_front3);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					if(h > 0 && w > 0){
-    						ship = Bitmap.createScaledBitmap(ship, h, w, false);
-    						canvas.drawBitmap(ship, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
-    					}
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_front3);
+    		    		if(h > 0 && w > 0){
+    		    			ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    						canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
+    		    		}
     				}
     				else if(aGraph.graph[i][j].type == "battleship31"){
-    					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_middle1);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					if(h > 0 && w > 0){
-    						Bitmap ship1 = Bitmap.createScaledBitmap(ship, h, w, false);
-    						canvas.drawBitmap(ship1, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
-    					}
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_middle1);
+    		    		if(h > 0 && w > 0){
+    		    			ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    						canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
+    		    		}
     				}
     				else if(aGraph.graph[i][j].type == "battleship32"){
-    					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_back1);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					if(h > 0 && w > 0){
-    						Bitmap ship1 = Bitmap.createScaledBitmap(ship, h, w, false);
-    						canvas.drawBitmap(ship1, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
-    					}
-    				}
-    				if(aGraph.graph[i][j].state == 1){		//Rendering Hits
-    					Bitmap ship;
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-
-    					if(aGraph.graph[i][j].tag == "boat"){
-    						ship = BitmapFactory.decodeResource(getResources(), R.drawable.hit);
-    					}
-    					else{ship = BitmapFactory.decodeResource(getResources(), R.drawable.miss);}
-    					
-    					if(h > 0 && w > 0){
-    						ship = Bitmap.createScaledBitmap(ship, h, w, false);
-    						canvas.drawBitmap(ship, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
-    					}
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_back1);
+    		    		if(h > 0 && w > 0){
+    		    			ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    						canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
+    		    		}
     				}
     				if(bAttacks[i][j]){						//Rendering Enemy Attacks
     					Bitmap ship;
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
 
     					if(aGraph.graph[i][j].tag == "boat"){
     						ship = BitmapFactory.decodeResource(getResources(), R.drawable.hit);
@@ -1119,7 +1171,7 @@ public class MainActivity extends ActionBarActivity {
     					
     					if(h > 0 && w > 0){
     						ship = Bitmap.createScaledBitmap(ship, h, w, false);
-    						canvas.drawBitmap(ship, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
+    						canvas.drawBitmap(ship, xPos, yPos, paint);
     					}
     				}
     					
@@ -1134,6 +1186,8 @@ public class MainActivity extends ActionBarActivity {
 	    
     	LinearLayout layout;
     	Button attack;
+    	Bitmap main_menu, back_btn;
+    	Bitmap[][] images;
     	
     	public bView(Context context){
     		super(context);    		
@@ -1146,8 +1200,11 @@ public class MainActivity extends ActionBarActivity {
     		super.onDraw(canvas);
     		//If we want to have extra things drawn on the screen, this is where the code should go
     		
+    		images = new Bitmap[10][10];
     		checkWinner();
-    		//parseDown();
+    		
+    		if(!singlePlayer)
+    			uploadGame();
     		
     		//This first segment is devoted to drawing the button at the bottom 
     		Paint paint = new Paint();
@@ -1159,27 +1216,104 @@ public class MainActivity extends ActionBarActivity {
     		ty -= getHeight() / 12;
     		float by = getHeight();
     		canvas.drawRect(lx, ty, rx, by, paint);
-    		paint.setColor(Color.BLACK);
+    		paint.setColor(Color.RED);
     		paint.setTextSize(20);
     		canvas.drawText("Go To Main", rx/2, ((ty + by) / 2), paint);
     		
+    		int w = (int)(getHeight() * 0.25);
+    		int h = (int)(getWidth() / 2);
+    		
+    		main_menu = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_main_menu_btn);
+    		back_btn = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_back_btn);
+    		if(h > 0 && w > 0){
+    			main_menu = Bitmap.createScaledBitmap(main_menu, h, w, false);
+    			back_btn = Bitmap.createScaledBitmap(back_btn, h, w, false);
+    			canvas.drawBitmap(main_menu, (float)0,(float)(getHeight() * 0.75), null);
+    			canvas.drawBitmap(back_btn, (float)getWidth() / 2,(float)(getHeight() * 0.75), null);
+    		}
+    		
        		for(int i = 0; i < 10; i++){
     			for(int j = 0; j < 10; j++){
+    				float xPos = 0;
+    				float yPos = 0;
+    				switch(i){
+	    				case 0:
+	    					xPos = (float)(sizeX * 0.0);
+	    					break;
+	    				case 1:
+	    					xPos = (float)(sizeX * 0.10);
+	    					break;
+	    				case 2:
+	    					xPos = (float)(sizeX * 0.20);
+	    					break;
+	    				case 3:
+	    					xPos = (float)(sizeX * 0.30);
+	    					break;
+	    				case 4:
+	    					xPos = (float)(sizeX * 0.40);
+	    					break;
+	    				case 5:
+	    					xPos = (float)(sizeX * 0.50);
+	    					break;
+	    				case 6:
+	    					xPos = (float)(sizeX * 0.60);
+	    					break;
+	    				case 7:
+	    					xPos = (float)(sizeX * 0.70);
+	    					break;
+	    				case 8:
+	    					xPos = (float)(sizeX * 0.80);
+	    					break;
+	    				case 9:
+	    					xPos = (float)(sizeX * 0.90);
+	    					break;
+	    				default:
+	    					break;
+    				}
+    				switch(j){
+    				case 0:
+    					yPos = (float)(sizeY * 0.083);
+    					break;
+    				case 1:
+    					//yPos = (float)(sizeY * 0.15);
+    					yPos = (float)(sizeY * 0.13);
+    					break;
+    				case 2:
+    					//yPos = (float)(sizeY * 0.215);
+    					yPos = (float)(sizeY * 0.188);
+    					break;
+    				case 3:
+    					//yPos = (float)(sizeY * 0.282);
+    					yPos = (float)(sizeY * 0.248);
+    					break;
+    				case 4:
+    					//yPos = (float)(sizeY * 0.35);
+    					yPos = (float)(sizeY * 0.305);
+    					break;
+    				case 5:
+    					//yPos = (float)(sizeY * 0.415);
+    					yPos = (float)(sizeY * 0.365);
+    					break;
+    				case 6:
+    					//yPos = (float)(sizeY * 0.4825);
+    					yPos = (float)(sizeY * 0.425);
+    					break;
+    				case 7:
+    					//yPos = (float)(sizeY * 0.55);
+    					yPos = (float)(sizeY * 0.48);
+    					break;
+    				case 8:
+    					//yPos = (float)(sizeY * 0.618);
+    					yPos = (float)(sizeY * 0.54);
+    					break;
+    				case 9:
+    					yPos = (float)(sizeY * 0.60);
+    					break;
+    				default:
+    					break;
+    				}
     				if(singlePlayer){
     					
-	    				if(ai.aiGraph.graph[i][j].state == 1){
-	    					lx = i * (sizeX / 10);
-	    					rx = lx + (sizeX / 10);
-	    					by = (float)((j * (sizeY*0.066)) + (sizeY * 0.083));
-	    					ty = (float)(by - sizeY * 0.066);
-	    					
-	    					if(ai.aiGraph.graph[i][j].tag == "boat"){
-	    						paint.setColor(Color.RED);
-	    					}
-	    					else{paint.setColor(Color.WHITE);}
-	    					canvas.drawRect(lx, ty, rx, by, paint);
-	    				}
-	    				
 	    				if(ai.aiGraph.graph[i][j].state == 3){			//Rendering Temporary Attacks
 	    					lx = i * (sizeX / 10);
 	    					rx = lx + (sizeX / 10);
@@ -1189,31 +1323,75 @@ public class MainActivity extends ActionBarActivity {
 	    					canvas.drawRect(lx, ty, rx, by, paint);
 	    					
 	    				}
+	    				if(ai.aiGraph.graph[i][j].state == 1){		//Rendering Hits
+	    					h = (int)(getHeight() * 0.0666);
+	    					w = (int)(getWidth() / 10);
+
+	    					if(ai.aiGraph.graph[i][j].tag == "boat"){
+	    						images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.hit);
+	    					}
+	    					else{images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.miss);}
+	    					
+	    					if(h > 0 && w > 0){
+	    						images[i][j] = Bitmap.createScaledBitmap(images[i][j], h, w, false);
+	    						canvas.drawBitmap(images[i][j], xPos, yPos, null);
+	    					}
+	    				}
+	    				if(aAttacks[i][j]){
+	    					Log.i("Draw","Drawing aAttacks");
+    						w = (int)(sizeY * 0.0666);
+	    					h = (int)(sizeX / 10);
+	    					if(ai.aiGraph.graph[i][j].tag == "boat"){
+	    						images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.hit);
+	    					}
+	    					else{images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.miss);}
+	    					
+	    					if(h > 0 && w > 0){
+	    						images[i][j] = Bitmap.createScaledBitmap(images[i][j], h, w, false);
+	    						canvas.drawBitmap(images[i][j], xPos, yPos , null);
+	    					}
+	    				}
 	    				
     				}
-    				else{
+    				else{	//Multiplayer
         				//Note this needs to be changed to bGraph once bGraph becomes a real thing (i.e. it is being initialized someplace)
-    					if(aGraph.graph[i][j].tag == "water" || aGraph.graph[i][j].tag == "boat" ){
-    						lx = i * (sizeX / 10);
-	    					rx = lx + (sizeX / 10);
-	    					by = (float)((j * (sizeY*0.066)) + (sizeY * 0.083));
-	    					ty = (float)(by - sizeY * 0.066);
-	    		    		paint.setColor(Color.BLUE);
-	    					canvas.drawRect(lx, ty, rx, by, paint);
-	    				}
-
-	    				//Note this needs to be changed to bGraph once bGraph becomes a real thing (i.e. it is being initialized someplace)
-	    				if(aGraph.graph[i][j].state == 1){
+    					if(bGraph.graph[i][j].state == 3){			//Rendering Temporary Attacks
 	    					lx = i * (sizeX / 10);
 	    					rx = lx + (sizeX / 10);
 	    					by = (float)((j * (sizeY*0.066)) + (sizeY * 0.083));
 	    					ty = (float)(by - sizeY * 0.066);
-	        				//Note this needs to be changed to bGraph once bGraph becomes a real thing (i.e. it is being initialized someplace)
-	    					if(aGraph.graph[i][j].tag == "ship"){
-	    						paint.setColor(Color.RED);
-	    					}
-	    					else{paint.setColor(Color.WHITE);}
+	    		    		paint.setColor(Color.BLACK);
 	    					canvas.drawRect(lx, ty, rx, by, paint);
+	    					
+	    				}
+
+    					if(bGraph.graph[i][j].state == 1){		//Rendering Hits
+	    					h = (int)(getHeight() * 0.0666);
+	    					w = (int)(getWidth() / 10);
+
+	    					if(bGraph.graph[i][j].tag == "boat"){
+	    						images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.hit);
+	    					}
+	    					else{images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.miss);}
+	    					
+	    					if(h > 0 && w > 0){
+	    						images[i][j] = Bitmap.createScaledBitmap(images[i][j], h, w, false);
+	    						canvas.drawBitmap(images[i][j], xPos, yPos, null);
+	    					}
+	    				}
+	    				if(aAttacks[i][j]){
+	    					Log.i("Draw","Drawing aAttacks");
+    						w = (int)(sizeY * 0.0666);
+	    					h = (int)(sizeX / 10);
+	    					if(ai.aiGraph.graph[i][j].tag == "boat"){
+	    						images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.hit);
+	    					}
+	    					else{images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.miss);}
+	    					
+	    					if(h > 0 && w > 0){
+	    						images[i][j] = Bitmap.createScaledBitmap(images[i][j], h, w, false);
+	    						canvas.drawBitmap(images[i][j], xPos, yPos , null);
+	    					}
 	    				}
     				}
     				if(aAttacks[i][j]){
@@ -1222,16 +1400,32 @@ public class MainActivity extends ActionBarActivity {
     					by = (float)((j * (sizeY*0.066)) + (sizeY * 0.083));
     					ty = (float)(by - sizeY * 0.066);
     					if(singlePlayer){
-    						if(ai.aiGraph.graph[i][j].tag == "boat")
-    							paint.setColor(Color.RED);
-    						else{paint.setColor(Color.WHITE);}
+    						h = (int)(getHeight() * 0.0666);
+	    					w = (int)(getWidth() / 10);
+	    					if(ai.aiGraph.graph[i][j].tag == "boat"){
+	    						images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.hit);
+	    					}
+	    					else{images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.miss);}
+	    					
+	    					if(h > 0 && w > 0){
+	    						images[i][j] = Bitmap.createScaledBitmap(images[i][j], h, w, false);
+	    						canvas.drawBitmap(images[i][j], xPos, yPos , null);
+	    					}
     					}
     					else{
-    						if(ai.aiGraph.graph[i][j].tag == "boat")
-    							paint.setColor(Color.RED);
-    						else{paint.setColor(Color.WHITE);}
+    						h = (int)(getHeight() * 0.0666);
+	    					w = (int)(getWidth() / 10);
+	    					if(bGraph.graph[i][j].tag == "boat"){
+	    						images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.hit);
+	    					}
+	    					else{images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.miss);}
+	    					
+	    					if(h > 0 && w > 0){
+	    						images[i][j] = Bitmap.createScaledBitmap(images[i][j], h, w, false);
+	    						canvas.drawBitmap(images[i][j], xPos, yPos, null);
+	    					}
     					}
-    					canvas.drawRect(lx, ty, rx, by, paint);
+    				
     				}
     			}
     		}
@@ -1244,6 +1438,8 @@ public class MainActivity extends ActionBarActivity {
 	    
     	LinearLayout layout;
     	Button attack;
+    	Bitmap[][] ships;
+    	Bitmap confirm, rotate, main_menu;
     	
     	public placeView(Context context){
     		super(context);    		
@@ -1253,6 +1449,7 @@ public class MainActivity extends ActionBarActivity {
 	
     	@Override
     	protected void onDraw(Canvas canvas){
+    		ships = new Bitmap[10][10];
     		super.onDraw(canvas);
     		//If we want to have extra things drawn on the screen, this is where the code should go
     		    		
@@ -1266,27 +1463,100 @@ public class MainActivity extends ActionBarActivity {
     		ty = (float) (ty * 0.75);
     		float by = getHeight();
     		canvas.drawRect(lx, ty, rx, by, paint);
-
+    		
+    		int w = (int)(getHeight() * 0.25);
+    		int h = (int)(getWidth() / 2);
+    		
+    		confirm = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_confirm_btn);
+    		rotate = BitmapFactory.decodeResource(getResources(), R.drawable.temp_boat);
+    		if(h > 0 && w > 0){
+    			confirm = Bitmap.createScaledBitmap(confirm, h, w, false);
+    			rotate = Bitmap.createScaledBitmap(rotate, h, w, false);
+    			canvas.drawBitmap(confirm, (float)0,(float)(getHeight() * 0.75), null);
+    			canvas.drawBitmap(rotate, (float)getWidth() / 2,(float)(getHeight() * 0.75), null);
+    		}
+    		
     		
        		for(int i = 0; i < 10; i++){
     			for(int j = 0; j < 10; j++){
-    				/*if(aGraph.graph[i][j].tag == "boat"){
-    					Log.i("Draw","Drawing A Boat");
-    					lx = i * (sizeX / 10);
-    					rx = lx + (sizeX / 10);
-    					by = (float)((j * (sizeY*0.0666)) + (sizeY * 0.083));
-    					ty = (float)(by - sizeY * 0.0666);
-    		    		paint.setColor(Color.GREEN);
-    					canvas.drawRect(lx, ty, rx, by, paint);
-    					
-    					/*Log.i("Draw","Drawing the Boat Image for Tag Boat");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_front);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					Bitmap ship1 = Bitmap.createScaledBitmap(ship, h, w, false);
-    					canvas.drawBitmap(ship1, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);*/
-    					
-    				//}
+    				float xPos = 0;
+    				float yPos = 0;
+    				switch(i){
+	    				case 0:
+	    					xPos = (float)(sizeX * 0.0);
+	    					break;
+	    				case 1:
+	    					xPos = (float)(sizeX * 0.10);
+	    					break;
+	    				case 2:
+	    					xPos = (float)(sizeX * 0.20);
+	    					break;
+	    				case 3:
+	    					xPos = (float)(sizeX * 0.30);
+	    					break;
+	    				case 4:
+	    					xPos = (float)(sizeX * 0.40);
+	    					break;
+	    				case 5:
+	    					xPos = (float)(sizeX * 0.50);
+	    					break;
+	    				case 6:
+	    					xPos = (float)(sizeX * 0.60);
+	    					break;
+	    				case 7:
+	    					xPos = (float)(sizeX * 0.70);
+	    					break;
+	    				case 8:
+	    					xPos = (float)(sizeX * 0.80);
+	    					break;
+	    				case 9:
+	    					xPos = (float)(sizeX * 0.90);
+	    					break;
+	    				default:
+	    					break;
+    				}
+    				switch(j){
+    				case 0:
+    					yPos = (float)(sizeY * 0.083);
+    					break;
+    				case 1:
+    					//yPos = (float)(sizeY * 0.15);
+    					yPos = (float)(sizeY * 0.13);
+    					break;
+    				case 2:
+    					//yPos = (float)(sizeY * 0.215);
+    					yPos = (float)(sizeY * 0.188);
+    					break;
+    				case 3:
+    					//yPos = (float)(sizeY * 0.282);
+    					yPos = (float)(sizeY * 0.248);
+    					break;
+    				case 4:
+    					//yPos = (float)(sizeY * 0.35);
+    					yPos = (float)(sizeY * 0.305);
+    					break;
+    				case 5:
+    					//yPos = (float)(sizeY * 0.415);
+    					yPos = (float)(sizeY * 0.365);
+    					break;
+    				case 6:
+    					//yPos = (float)(sizeY * 0.4825);
+    					yPos = (float)(sizeY * 0.425);
+    					break;
+    				case 7:
+    					//yPos = (float)(sizeY * 0.55);
+    					yPos = (float)(sizeY * 0.48);
+    					break;
+    				case 8:
+    					//yPos = (float)(sizeY * 0.618);
+    					yPos = (float)(sizeY * 0.54);
+    					break;
+    				case 9:
+    					yPos = (float)(sizeY * 0.60);
+    					break;
+    				default:
+    					break;
+    				}
     				if(aGraph.graph[i][j].state == 3){
     					lx = i * (sizeX / 10);
     					rx = lx + (sizeX / 10);
@@ -1297,109 +1567,103 @@ public class MainActivity extends ActionBarActivity {
     				}
     				if(aGraph.graph[i][j].type == "battleship00"){
     					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_front);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					ship = Bitmap.createScaledBitmap(ship, h, w, false);
-    					canvas.drawBitmap(ship, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_front);
+    					h = (int)(getHeight() * 0.0666);
+    					w = (int)(getWidth() / 10);
+    					ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    					canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
     					//ship.setHeight(h);
     					//ship.setWidth((int)getWidth() / 10);
     				}
     				else if(aGraph.graph[i][j].type == "battleship01"){
     					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_middle);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					Bitmap ship1 = Bitmap.createScaledBitmap(ship, h, w, false);
-    					canvas.drawBitmap(ship1, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_middle);
+    					h = (int)(getHeight() * 0.0666);
+    					w = (int)(getWidth() / 10);
+    					ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    					canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
     				}
     				else if(aGraph.graph[i][j].type == "battleship02"){
     					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_back);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					Bitmap ship1 = Bitmap.createScaledBitmap(ship, h, w, false);
-    					canvas.drawBitmap(ship1, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_back);
+    					h = (int)(getHeight() * 0.0666);
+    					w = (int)(getWidth() / 10);
+    					ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    					canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
     				}
     				
     				else if(aGraph.graph[i][j].type == "battleship10"){
     					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_front3);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					ship = Bitmap.createScaledBitmap(ship, h, w, false);
-    					canvas.drawBitmap(ship, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
-    					//ship.setHeight(h);
-    					//ship.setWidth((int)getWidth() / 10);
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_front3);
+    					h = (int)(getHeight() * 0.0666);
+    					w = (int)(getWidth() / 10);
+    					ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    					canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
     				}
     				else if(aGraph.graph[i][j].type == "battleship11"){
     					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_middle1);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					Bitmap ship1 = Bitmap.createScaledBitmap(ship, h, w, false);
-    					canvas.drawBitmap(ship1, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_middle1);
+    					h = (int)(getHeight() * 0.0666);
+    					w = (int)(getWidth() / 10);
+    					ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    					canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
     				}
     				else if(aGraph.graph[i][j].type == "battleship12"){
     					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_back1);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					Bitmap ship1 = Bitmap.createScaledBitmap(ship, h, w, false);
-    					canvas.drawBitmap(ship1, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_back1);
+    					h = (int)(getHeight() * 0.0666);
+    					w = (int)(getWidth() / 10);
+    					ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    					canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
     				}
     				
     				else if(aGraph.graph[i][j].type == "battleship20"){
     					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_front);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					ship = Bitmap.createScaledBitmap(ship, h, w, false);
-    					canvas.drawBitmap(ship, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
-    					//ship.setHeight(h);
-    					//ship.setWidth((int)getWidth() / 10);
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_front);
+    					h = (int)(getHeight() * 0.0666);
+    					w = (int)(getWidth() / 10);
+    					ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    					canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
     				}
     				else if(aGraph.graph[i][j].type == "battleship21"){
     					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_middle);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					Bitmap ship1 = Bitmap.createScaledBitmap(ship, h, w, false);
-    					canvas.drawBitmap(ship1, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_middle);
+    					h = (int)(getHeight() * 0.0666);
+    					w = (int)(getWidth() / 10);
+    					ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    					canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
     				}
     				else if(aGraph.graph[i][j].type == "battleship22"){
     					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_back);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					Bitmap ship1 = Bitmap.createScaledBitmap(ship, h, w, false);
-    					canvas.drawBitmap(ship1, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_back);
+    					h = (int)(getHeight() * 0.0666);
+    					w = (int)(getWidth() / 10);
+    					ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    					canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
     				}
     				else if(aGraph.graph[i][j].type == "battleship30"){
     					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_front3);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					ship = Bitmap.createScaledBitmap(ship, h, w, false);
-    					canvas.drawBitmap(ship, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
-    					//ship.setHeight(h);
-    					//ship.setWidth((int)getWidth() / 10);
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_front3);
+    					h = (int)(getHeight() * 0.0666);
+    					w = (int)(getWidth() / 10);
+    					ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    					canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
     				}
     				else if(aGraph.graph[i][j].type == "battleship31"){
     					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_middle1);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					Bitmap ship1 = Bitmap.createScaledBitmap(ship, h, w, false);
-    					canvas.drawBitmap(ship1, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_middle1);
+    					h = (int)(getHeight() * 0.0666);
+    					w = (int)(getWidth() / 10);
+    					ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    					canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
     				}
     				else if(aGraph.graph[i][j].type == "battleship32"){
     					Log.i("Draw","Drawing the Boat Image");
-    					Bitmap ship = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_back1);
-    					int h = (int)(getHeight() * 0.0666);
-    					int w = (int)(getWidth() / 10);
-    					Bitmap ship1 = Bitmap.createScaledBitmap(ship, h, w, false);
-    					canvas.drawBitmap(ship1, (float)(i * sizeX / 10), (float)((j-1) * (sizeY * 0.0666) + (sizeY * 0.083)) , paint);
+    					ships[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_back1);
+    					h = (int)(getHeight() * 0.0666);
+    					w = (int)(getWidth() / 10);
+    					ships[i][j] = Bitmap.createScaledBitmap(ships[i][j], h, w, false);
+    					canvas.drawBitmap(ships[i][j], xPos, yPos , paint);
     				}
     			}
     		}
@@ -1417,7 +1681,25 @@ public class MainActivity extends ActionBarActivity {
     ///////////Creating Functions that correspond to various buttons////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////
-    
+    public void main_menu_btn(View v){
+    	curView = 0;
+    	reset();
+    	setContentView(R.layout.activity_main);
+    }
+   public void main_start_single(View v){
+	   curView = 2;
+	   singlePlayer = true;
+	   ai = new AI();
+	   setContentView(place);
+	   place.draw(canvas);
+   }
+   public void main_start_multi(View v){
+	   curView = 2;
+	   singlePlayer = false;
+	   setContentView(place);
+	   place.draw(canvas);
+   }
+   
 	public void main_start_btn(View v){		
         setContentView(R.layout.setup_game);
         curView = 1;
@@ -1975,4 +2257,190 @@ public class MainActivity extends ActionBarActivity {
     		this.hits_till_sunk = length;
     	}
     }
+    
+    //#########################################################################################################################\\
+	//#########################################################################################################################\\
+	//################################################# Server Functions ######################################################\\
+	//#########################################################################################################################\\
+	//#########################################################################################################################\\
+    
+	
+    //Server Variables\\
+	Gson gson = new Gson();
+	private ServerCall downloader = null;				// Background downloader.
+	public  String localGameID;							// Randomly generated string for Game ID
+	public int localNumPlayers;							// Number of players on a game
+	public int playerID;								// 0 = playerA; 1 = playerB
+	private static final String URL = "http://ucsc-cmps121-battleship.appspot.com/classexample/default/";
+	public  static final String SERVER_URL_PREFIX = "http://ucsc-cmps121-battleship.appspot.com/classexample/default/";
+	private static final String DOWNLOADPOST = "downloadGame.json";
+	private static final String UPLOADPOST = "uploadGame.json";
+	SerialGame remoteGame = new SerialGame();
+    ServerIO sIO = new ServerIO(URL, DOWNLOADPOST, UPLOADPOST);
+	
+	
+    
+	public void downloadGame(){
+		if(localGameID == null){								// we currently are not part of a game
+			remoteGame = sIO.downloadJSON();						// look for a game
+			Log.i("Download", "Trying to find open game");			
+			if(remoteGame.result.equals("no open games")){		// no open games
+				Log.i("Download", "Trying to setup game");
+				SerialGame sGame = makeGame();						// make game
+				sIO.uploadJSON(sGame);								// upload game												
+			}else{
+				localGameID = remoteGame.gameID;						// store gameID locally
+				remoteGame.numPlayers = 2;								// edit numPlayers
+				remoteGame.open = false;								// edit open
+				playerID = 1;											// save which player we are (playerB)
+				sIO.uploadJSON(remoteGame);								//
+			}
+		}else{
+			remoteGame = sIO.downloadJSON(localGameID);						// download game with known gameID
+			if(playerID == 0){												// update local graphs depending on which player we are
+				parseDownA(remoteGame.playA);
+				parseDownA(remoteGame.playB);
+			}else{
+				parseDownA(remoteGame.playB);
+				parseDownB(remoteGame.playA);
+			}
+		}
+	}
+	
+	public void uploadGame(){
+		SerialGame sGame = convertCurrGame();
+		sIO.uploadJSON(sGame);
+	}
+	
+	// class that should create a secure random string 
+	public final static class randomGameID{
+		private static SecureRandom random = new SecureRandom();
+		
+		public static String nextGameId(){
+			return new BigInteger(130, random).toString(32);
+		}
+	}
+	
+	public SerialGame makeGame(){
+		//make a new game and save relevent variables locally	
+		SerialGame sGame = new SerialGame();
+		sGame.gameID = randomGameID.nextGameId();
+		localGameID = sGame.gameID;								// save locally
+		sGame.maxPlayers = 2;
+		sGame.numPlayers = 1;
+		localNumPlayers = 1;
+		sGame.open = true;
+		sGame.playA = null;
+		sGame.playB = null;
+		sGame.turn = 0;
+		return sGame;
+	}
+	
+	public SerialGame convertCurrGame(){
+		SerialGame sGame = new SerialGame();
+		sGame.gameID = localGameID;			
+		sGame.maxPlayers = 2;
+		sGame.numPlayers = localNumPlayers;
+		// set playA and playB
+		if(playerID == 0){
+			sGame.playA = parseAUp();		//parse our attacks into A
+			sGame.playB = parseBUp();		//parse opponent attacks into B
+		}else{
+			sGame.playB = parseAUp();		//parse our attacks into B
+			sGame.playA = parseBUp();		//parse opponent attacks into A
+		}
+		sGame.turn = turn;					
+		return sGame;
+	}
+	
+    public String parseAUp(){
+    	String temp = "";
+    	for(int i = 0; i < 10; i++){
+    		for(int j = 0; j < 10; j++){
+    			if(aAttacks[i][j]) temp.concat(String.valueOf(1));
+    			else temp.concat(String.valueOf(0));
+    		}
+    	}
+    	return temp;  	
+    }
+    
+    public String parseBUp(){
+    	String temp = "";
+    	for(int i = 0; i < 10; i++){
+    		for(int j = 0; j < 10; j++){
+    			if(bAttacks[i][j]) temp.concat(String.valueOf(1));
+    			else temp.concat(String.valueOf(0));
+    		}
+    	}
+    	return temp;
+    }
+    
+    public void parseDownA(String server){
+    	String temp = server;
+    	
+    	//Constucnt a current state of our attacks
+    	String temp1 = "";
+    	for(int i = 0; i < 10; i++){
+    		for(int j = 0; j < 10; j++){
+    			if(aAttacks[i][j]) temp1 += String.valueOf(1);
+    			else temp1 += String.valueOf(0);
+    		}
+    	}
+    	
+    	//If that version is not the same as the version downloaded from the server, update the local version
+    	if(temp1 != temp){
+    		int tempCounter = 0;
+	    	for(int i = 0; i < 10; i++){
+	    		for(int j = 0; j < 10; j++){
+	    			int tempI = i;
+	    			int tempJ = j;
+	    			if(tempI == 0 && j > 0) tempI = 10;
+	    			if(tempJ == 0) tempJ = 1;
+	    			
+	    			if(temp.charAt(tempI * tempJ) == '0'){ aAttacks[i][j] = false;}
+	    			else if(temp.charAt(tempI * tempJ) == '1'){ aAttacks[i][j] = true;}
+	    			
+	    			if(aAttacks[i][j] && bGraph.graph[i][j].tag == "boat"){
+	    				tempCounter++;
+	    			}
+	    		}
+	    	}
+	    	boats_remaining = 17 - tempCounter;
+    	}
+    }
+    
+    public void parseDownB(String server){
+    	String temp = server;
+    	
+    	//Constructing a string that represents the most recent version of the enemies attack array
+    	String temp1 = "";
+    	for(int i = 0; i < 10; i++){
+    		for(int j = 0; j < 10; j++){
+    			if(bAttacks[i][j]) temp1 += String.valueOf(1);
+    			else temp1 += String.valueOf(0);
+    		}
+    	}
+    	
+    	//If that version is not the same as the version downloaded from the server, update the local version
+    	if(temp1 != temp){
+    		int tempCounter = 0;
+	    	for(int i = 0; i < 10; i++){
+	    		for(int j = 0; j < 10; j++){
+	    			int tempI = i;
+	    			int tempJ = j;
+	    			if(tempI == 0 && j > 0) tempI = 10;
+	    			if(tempJ == 0) tempJ = 1;
+	    			
+	    			if(temp.charAt(tempI * tempJ) == '0'){ bAttacks[i][j] = false;}
+	    			else if(temp.charAt(tempI * tempJ) == '1'){ bAttacks[i][j] = true;}
+	    			
+	    			if(bAttacks[i][j] && aGraph.graph[i][j].tag == "boat"){
+	    				tempCounter++;
+	    			}
+	    		}
+	    	}
+	    	boats_remaining = 17 - tempCounter;
+    	}
+    }
+    
 }

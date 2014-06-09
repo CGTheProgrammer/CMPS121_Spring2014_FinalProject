@@ -18,6 +18,16 @@
             android:text="Game Over\n You Suck"
             android:textAppearance="?android:attr/textAppearanceLarge" />
 
+        <ImageView
+            android:id="@+id/mainMenuBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/textView1"
+            android:layout_centerHorizontal="true"
+            android:onClick="main_menu_btn"
+            android:layout_marginTop="62dp"
+            android:src="@drawable/battleship_main_menu_btn" />
+
     </RelativeLayout>
 
 </LinearLayout>
