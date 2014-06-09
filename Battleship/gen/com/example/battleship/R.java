@@ -1090,17 +1090,18 @@ containing a value of this type.
         public static final int battleship_front1=0x7f020061;
         public static final int battleship_front2=0x7f020062;
         public static final int battleship_front3=0x7f020063;
-        public static final int battleship_main_menu_btn=0x7f020064;
-        public static final int battleship_main_screen=0x7f020065;
-        public static final int battleship_middle=0x7f020066;
-        public static final int battleship_middle1=0x7f020067;
-        public static final int battleship_multi_btn=0x7f020068;
-        public static final int battleship_single_btn=0x7f020069;
-        public static final int hit=0x7f02006a;
-        public static final int i_do_nothing=0x7f02006b;
-        public static final int ic_launcher=0x7f02006c;
-        public static final int miss=0x7f02006d;
-        public static final int temp_boat=0x7f02006e;
+        public static final int battleship_main_menu=0x7f020064;
+        public static final int battleship_main_menu_btn=0x7f020065;
+        public static final int battleship_main_screen=0x7f020066;
+        public static final int battleship_middle=0x7f020067;
+        public static final int battleship_middle1=0x7f020068;
+        public static final int battleship_multi_btn=0x7f020069;
+        public static final int battleship_single_btn=0x7f02006a;
+        public static final int hit=0x7f02006b;
+        public static final int i_do_nothing=0x7f02006c;
+        public static final int ic_launcher=0x7f02006d;
+        public static final int miss=0x7f02006e;
+        public static final int temp_boat=0x7f02006f;
     }
     public static final class id {
         public static final int action_bar=0x7f05001c;
