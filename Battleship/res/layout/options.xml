@@ -6,27 +6,17 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:background="@drawable/battleship_main_menu"
+        android:background="@drawable/battleship_credits"
         android:layout_height="match_parent" >
-
-        <TextView
-            android:id="@+id/optionsView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="43dp"
-            android:text="@string/Options"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
 
         <Button
             android:id="@+id/optionsBackBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="32dp"
             android:onClick="back_btn"
-            android:layout_alignRight="@+id/optionsView"
-            android:layout_marginBottom="101dp"
             android:text="@string/back" />
 
     </RelativeLayout>
