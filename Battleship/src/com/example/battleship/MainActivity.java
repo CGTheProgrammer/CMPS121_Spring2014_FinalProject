@@ -685,6 +685,50 @@ public class MainActivity extends ActionBarActivity {
 			setContentView(place);
 		}
 	}
+	
+	//Controls the functionality of the back button
+    //Controls the functionality of the Back Button
+    @Override
+    public void onBackPressed() {
+		if(curView == 0 || curView == 1){				//This is what occurs when the back button is pressed in one of the menus
+			setContentView(R.layout.activity_main);
+			if(curView == 1)
+				curView = 0;
+		}
+		else if(curView == 2){							//This is what happens when the back button is pressed from the main game screen
+			reset();
+			setContentView(R.layout.activity_main);
+			curView = 0;
+    	}
+		else{
+			setContentView(game);						//This is what happens when the back button is pressed on the attack screen
+			curView = 2;
+		}  
+	}
+
+ 	public void back_btn(View v){
+ 		if(curView == 0 || curView == 1){
+ 			setContentView(R.layout.activity_main);
+ 			if(curView == 1)
+ 				curView = 0;
+ 		}
+ 		else{
+ 			setContentView(game);
+ 			curView = 2;
+ 		}
+ 	}
+ 	
+ 	public void options_single_player(View v){
+ 		singlePlayer = true;
+ 	}
+ 	
+ 	public void options_multi_player(View v){
+ 		singlePlayer = false;
+ 	}
+ 	
+ 	public void different_btn(View v){
+ 		setContentView(R.layout.options);
+ 	}
     
    
 	
@@ -934,49 +978,7 @@ public class MainActivity extends ActionBarActivity {
     	}
     }
  	
- 	//Controls the functionality of the back button
-    //Controls the functionality of the Back Button
-    @Override
-    public void onBackPressed() {
-		if(curView == 0 || curView == 1){				//This is what occurs when the back button is pressed in one of the menus
-			setContentView(R.layout.activity_main);
-			if(curView == 1)
-				curView = 0;
-		}
-		else if(curView == 2){							//This is what happens when the back button is pressed from the main game screen
-			reset();
-			setContentView(R.layout.activity_main);
-			curView = 0;
-    	}
-		else{
-			setContentView(game);						//This is what happens when the back button is pressed on the attack screen
-			curView = 2;
-		}  
-	}
-
- 	public void back_btn(View v){
- 		if(curView == 0 || curView == 1){
- 			setContentView(R.layout.activity_main);
- 			if(curView == 1)
- 				curView = 0;
- 		}
- 		else{
- 			setContentView(game);
- 			curView = 2;
- 		}
- 	}
  	
- 	public void options_single_player(View v){
- 		singlePlayer = true;
- 	}
- 	
- 	public void options_multi_player(View v){
- 		singlePlayer = false;
- 	}
- 	
- 	public void different_btn(View v){
- 		setContentView(R.layout.options);
- 	}
  	
  	
  	
@@ -1201,98 +1203,52 @@ public class MainActivity extends ActionBarActivity {
 	//#########################################################################################################################\\
 	//#########################################################################################################################\\
     
-	/////////////////////////////////////////////////////////////////////////////////
-	//CHECK THIS SWEET SERVER CODE EXAMPLE
-	//In the real game, you should first check for open games with downloadGame
-	//Do not start with uploadGame
-	//
-	//1. Check for open games (if it doesn't find one it returns "{result = "no open games"}", otherwise returns the game)
-	//2. If there's no open games, make one with uploadGame (make up a unique gameID somehow)
-	/////////////////////////////////////////////////////////////////////////////////
 	
     //Server Variables\\
 	Gson gson = new Gson();
 	private ServerCall downloader = null;				// Background downloader.
-	public static String localGameID;					// Randomly gengerated string for Game ID
+	public  String localGameID;							// Randomly gengerated string for Game ID
 	public int localNumPlayers;							// Number of players on a game
 	public int playerID;								// 0 = playerA; 1 = playerB
-	private static final String noOpenGame = "\"{result = \"no open games\"}\"";
-	public static final String SERVER_URL_PREFIX = "http://ucsc-cmps121-battleship.appspot.com/classexample/default/";
+	private static final String URL = "http://ucsc-cmps121-battleship.appspot.com/classexample/default/";
+	public  static final String SERVER_URL_PREFIX = "http://ucsc-cmps121-battleship.appspot.com/classexample/default/";
+	private static final String DOWNLOADPOST = "downloadGame.json";
+	private static final String UPLOADPOST = "uploadGame.json";
+	SerialGame remoteGame = new SerialGame();
+    ServerIO sIO = new ServerIO(URL, DOWNLOADPOST, UPLOADPOST);
 	
-	public void checkForGame(){
-		String temp = "";					// string to compare with
-		temp = downloadGame();				// set to return value of downloadGame
-		if(temp == noOpenGame){				// compare with noOpenGame
-			uploadGame();						// gengerate new game
+	
+    
+	public void downloadGame(){
+		if(localGameID == null){								// we currently are not part of a game
+			remoteGame = sIO.downloadJSON();						// look for a game
+			Log.d(LOG_TAG, "Trying to find open game");			
+			if(remoteGame.result.equals("no open games")){		// no open games
+				Log.d(LOG_TAG, "Trying to setup game");
+				SerialGame sGame = makeGame();						// make game
+				sIO.uploadJSON(sGame);								// upload game												
+			}else{
+				localGameID = remoteGame.gameID;						// store gameID locally
+				remoteGame.numPlayers = 2;								// edit numPlayers
+				remoteGame.open = false;								// edit open
+				playerID = 1;											// save which player we are (playerB)
+				sIO.uploadJSON(remoteGame);								//
+			}
 		}else{
-			parseDown(temp);					// parse down into game
+			remoteGame = sIO.downloadJSON(localGameID);						// download game with known gameID
+			if(playerID == 0){												// update local graphs depending on which player we are
+				parseDownA(remoteGame.playA);
+				parseDownA(remoteGame.playB);
+			}else{
+				parseDownA(remoteGame.playB);
+				parseDownB(remoteGame.playA);
+			}
 		}
-	}
-	
-	public String downloadGame(){
-		SerialGame sGame = convertCurrGame();
-		//Convert game to HashMap
-		HashMap<String, String> m = sGame.toHash();
-		
-		//Returns a specific closed game, or finds an open one and returns the gameID
-		ServerCallSpec downloadSpec = new ServerCallSpec();
-		downloadSpec.url = MainActivity.SERVER_URL_PREFIX + "downloadGame.json";
-		m = new HashMap<String,String>();
-		m.put("gameID", "Test");
-		downloadSpec.setParams(m);
-		downloadSpec.context = getApplication();
-
-		// Initiates server call.
-		downloader = new ServerCall();
-		downloader.execute(downloadSpec);
-		
-		try {
-		    //Grab the result of the download
-			PostProcessPair test = downloader.get();
-			Log.d(LOG_TAG, test.result);
-			//Convert download to game object
-		    sGame = gson.fromJson(test.result, SerialGame.class);
-		    Log.d(LOG_TAG, sGame.gameID);
-		} catch (InterruptedException e) {
-		    // TODO Auto-generated catch block
-		    e.printStackTrace();
-		} catch (ExecutionException e) {
-		    // TODO Auto-generated catch block
-		    e.printStackTrace();
-		}
-
-		return null;
 	}
 	
 	public void uploadGame(){
-		//Saves a game to a specific slot (gameID), or creates a new file if necessary
-		
-		//make game and save relevent variables locally	
-		playerID = 0;
-		SerialGame sGame = new SerialGame();
-		sGame.gameID = randomGameID.nextGameId();
-		localGameID = sGame.gameID;
-		sGame.maxPlayers = 2;
-		sGame.numPlayers = 1;
-		localNumPlayers = 1;
-		sGame.open = true;
-		sGame.playA = "Test String";
-		sGame.playB = "Test String";
-		sGame.turn = 0;
-
-		//Convert game to HashMap
-		HashMap<String, String> m = sGame.toHash();
-		
-		//SendSpec handles the server transaction, don't use the same one for uploads and downloads!
-		ServerCallSpec uploadSpec = new ServerCallSpec();
-		//Configure URL: Uploads use uploadGame, downloads use downloadGame
-		uploadSpec.url = MainActivity.SERVER_URL_PREFIX + "uploadGame.json";
-		uploadSpec.setParams(m);
-		uploadSpec.context = getApplication();
-
-		// Initiates and executes server call.
-		downloader = new ServerCall();
-		downloader.execute(uploadSpec);
+		SerialGame sGame = convertCurrGame();
+		sIO.uploadJSON(sGame);
 	}
 	
 	// class that should create a secure random string 
@@ -1302,6 +1258,21 @@ public class MainActivity extends ActionBarActivity {
 		public static String nextGameId(){
 			return new BigInteger(130, random).toString(32);
 		}
+	}
+	
+	public SerialGame makeGame(){
+		//make a new game and save relevent variables locally	
+		SerialGame sGame = new SerialGame();
+		sGame.gameID = randomGameID.nextGameId();
+		localGameID = sGame.gameID;								// save locally
+		sGame.maxPlayers = 2;
+		sGame.numPlayers = 1;
+		localNumPlayers = 1;
+		sGame.open = true;
+		sGame.playA = null;
+		sGame.playB = null;
+		sGame.turn = 0;
+		return sGame;
 	}
 	
 	public SerialGame convertCurrGame(){
@@ -1343,9 +1314,41 @@ public class MainActivity extends ActionBarActivity {
     	return temp;
     }
     
-    public void parseDown(String server){
+    public void parseDownA(String server){
+    	String temp = server;
     	
-    	//GET TEMP STRING FROM SERVER
+    	//Constucnt a current state of our attacks
+    	String temp1 = "";
+    	for(int i = 0; i < 10; i++){
+    		for(int j = 0; j < 10; j++){
+    			if(aAttacks[i][j]) temp1 += String.valueOf(1);
+    			else temp1 += String.valueOf(0);
+    		}
+    	}
+    	
+    	//If that version is not the same as the version downloaded from the server, update the local version
+    	if(temp1 != temp){
+    		int tempCounter = 0;
+	    	for(int i = 0; i < 10; i++){
+	    		for(int j = 0; j < 10; j++){
+	    			int tempI = i;
+	    			int tempJ = j;
+	    			if(tempI == 0 && j > 0) tempI = 10;
+	    			if(tempJ == 0) tempJ = 1;
+	    			
+	    			if(temp.charAt(tempI * tempJ) == '0'){ aAttacks[i][j] = false;}
+	    			else if(temp.charAt(tempI * tempJ) == '1'){ aAttacks[i][j] = true;}
+	    			
+	    			if(aAttacks[i][j] && bGraph.graph[i][j].tag == "boat"){
+	    				tempCounter++;
+	    			}
+	    		}
+	    	}
+	    	boats_remaining = 17 - tempCounter;
+    	}
+    }
+    
+    public void parseDownB(String server){
     	String temp = server;
     	
     	//Constructing a string that represents the most recent version of the enemies attack array
@@ -1402,7 +1405,8 @@ public class MainActivity extends ActionBarActivity {
     }
 	
 	void reset(){
-		for(int i = 0; i < 10; i++){
+		//Clear other global variables
+		for(int i = 0; i < 10; i++){					// reset aGraph & bGraph
 			if(i < 5)
 				boats[i].placed = false;
 			for(int j = 0; j < 10; j++){
