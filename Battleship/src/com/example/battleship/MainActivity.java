@@ -1411,7 +1411,7 @@ public class MainActivity extends ActionBarActivity {
 	    					}
 	    				}
     				}
-    				if(aAttacks[i][j]){
+    				/*if(aAttacks[i][j]){
     					lx = i * (sizeX / 10);
     					rx = lx + (sizeX / 10);
     					by = (float)((j * (sizeY*0.066)) + (sizeY * 0.083));
@@ -1419,13 +1419,18 @@ public class MainActivity extends ActionBarActivity {
     					if(singlePlayer){
     						h = (int)(getHeight() * 0.0666);
 	    					w = (int)(getWidth() / 10);
-	    					if(ai.aiGraph.graph[i][j].tag == "boat"){
+	    					if(singlePlayer){
+	    						if(ai.aiGraph.graph[i][j].tag == "boat"){
 	    						images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.hit);
+	    						}
+	    						else{images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.miss);}
 	    					}
-	    					if(bGraph.graph[i][j].tag == "boat"){
-	    						images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.hit);
+	    					else{
+	    						if(bGraph.graph[i][j].tag == "boat"){
+	    							images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.hit);
+	    						}
+	    						else{images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.miss);}
 	    					}
-	    					else{images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.miss);}
 	    					
 	    					
 	    					
@@ -1449,7 +1454,7 @@ public class MainActivity extends ActionBarActivity {
 	    					}
     					}
     				
-    				}
+    				}*/
     			}
     		}
     	}
