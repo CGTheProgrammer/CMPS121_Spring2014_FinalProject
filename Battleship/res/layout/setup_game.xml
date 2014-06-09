@@ -19,13 +19,13 @@
             android:text="@string/singlePlayer" />
 
         <CheckBox
-            android:id="@+id/CheckBox01"
+            android:id="@+id/multipPlayer_checkBox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignLeft="@+id/singlePlayer_checkBox"
             android:layout_below="@+id/singlePlayer_checkBox"
             android:layout_marginTop="30dp"
-            android:onClick="options_single_player"
+            android:onClick="options_multi_player"
             android:text="@string/multiplayer" />
 
         <TextView

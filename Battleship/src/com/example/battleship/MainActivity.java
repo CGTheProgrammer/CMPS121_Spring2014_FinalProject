@@ -1,6 +1,11 @@
 package com.example.battleship;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.HashMap;
 import java.util.Random;
+
+import com.google.gson.Gson;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -50,7 +55,14 @@ public class MainActivity extends ActionBarActivity {
 	public int curView;						//Keeps track of which screen the user is currently on 0 = main menu, 2 = game 
 	Canvas canvas;
 	
-	
+    
+    
+    //#########################################################################################################################\\
+   	//#########################################################################################################################\\
+    //#################################################### Android OS  ########################################################\\
+  	//#########################################################################################################################\\
+   	//#########################################################################################################################\\
+    
 		
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,8 +94,6 @@ public class MainActivity extends ActionBarActivity {
         boats[2] = new Boat(5, "aircraftcarrier", 0);
         boats[3] = new Boat(3, "destroyer", 0);
         boats[4] = new Boat(2, "patrol", 0);
-        
-        singlePlayer = false;
         
         canvas = new Canvas(Bitmap.createBitmap(sizeX,sizeY,Bitmap.Config.ARGB_8888));
         
@@ -502,7 +512,7 @@ public class MainActivity extends ActionBarActivity {
     		//If we want to have extra things drawn on the screen, this is where the code should go
     		
     		checkWinner();
-    		parseDown();
+    		//parseDown();
     		
     		//This first segment is devoted to drawing the button at the bottom 
     		Paint paint = new Paint();
@@ -686,6 +696,23 @@ public class MainActivity extends ActionBarActivity {
    	//#########################################################################################################################\\
 	
 	
+	
+	//Classic CS node data type
+    //Sits in a graph, holds information
+    public class Node{
+    	int x,y;			//Coordinates of the node [0-9][0-9]
+    	int state;			//0 = Nothing, 1 = hit   // 3 = temp      I wanted this to be an int in case we get into complex types
+    	String tag;			//This is a string representation of the state of a node. Used to denote whether the node is water, boat, or temp
+    	String type;		//What type of boat is this node? 
+    	public Node(int x, int y){
+    		tag = "water";
+    		type = "water";
+    		this.x = x;
+    		this.y = y;
+    		state = 0;
+    	}	
+    }
+	
     public class Graph{
     	Node[][] graph;
     	public Graph(){
@@ -696,192 +723,190 @@ public class MainActivity extends ActionBarActivity {
     			}	
     		}
     	}
-    	//Called when the user touches the screen.
-    	//Takes coordinate of event and logs it
-    	public void touch(int x, int y){
-    		graph[x][y].state = 1;
-    		Context context = getApplicationContext();
-    		String temp = "You pressed " + x + ", " + y;
-    		Toast toast = Toast.makeText(context, temp, Toast.LENGTH_SHORT);
-    		toast.show();
-    	}
-    	public boolean placeBoat(Boat boat, int x, int y){
-			Log.i("placeBoat","Start");
-    		boolean success = true;
-    		
-    		if(x > 9 || x < 0 || y > 9 || y < 0){
-    			return false;
-    		}
-    		
-    		boolean[] valid = new boolean[boat.length];
-    		
-    		for(int i = 0; i < boat.length; i++){
-    			if(graph[x][y].tag == "water"){
-    				valid[i] = false;
-    				switch(boat.direction){
-    					case 0:						//Direction = UP
-    						if((y - i) >= 0){
-    							if(graph[x][y-i].tag == "water")
-    								valid[i] = true;
-    						}
-    						break;
-    					case 1:						//Direction = RIGHT
-    						if((x + i) < 10){
-    							if(graph[x + i][y].tag == "water")
-    								valid[i] = true;
-    						}
-    						break;
-    					case 2:						//Direction = DOWN
-    						if((y + i) < 10){
-    							if(graph[x][y + i].tag == "water")
-    								valid[i] = true;
-    						}
-    						break;
-    					case 3:						//Direction = LEFT
-    						if((x - i) >= 0){
-    							if(graph[x - i][y].tag == "water")
-    								valid[i] = true;
-    						}
-    						break;
-    					default:
-    						System.out.println("You've been Trolled");
-    						break;
-    				}
-    			}
-    		}
-    		for(int i = 0; i < boat.length; i++){
-    			if(!valid[i])
-    				success = false;
-    			else{Log.i("placeBoat","Bad Location");}
-    		}
-    		//If there is a collision ensure that all the squares are reverted to being water
-    		if(success){
-	    		for(int i = 0; i < boat.length; i++){
-	    			String tempStr = "Boat Piece: " + String.valueOf(i);
-	    			Log.i("placeBoat", tempStr);
-	    			switch(boat.direction){
-	    				case 0:						//Direction = UP
-	    					graph[x][y-i].tag = "boat";
-	    					tempStr = "Boat Piece: " + String.valueOf(i) + " placed";
-	    		    		Log.i("placeBoat", tempStr);
-	    					break;
-	    				case 1:						//Direction = RIGHT
-	    					graph[x + i][y].tag = "boat";
-	    					break;
-	    				case 2:						//Direction = DOWN
-	    					graph[x][y + i].tag = "boat";
-	    					break;
-	    				case 3:						//Direction = LEFT
-	    					graph[x - i][y].tag = "boat";
-	    					break;
-	    				default:
-	    					System.out.println("You've been Trolled");
-	    					break;
-	    			}
-	    		}
-    		}
-			Log.i("placeBoat","Finish");
-    		return success;
-    	}
-    	public boolean placeBoatTemp(Boat boat, int x, int y){
-			Log.i("placeBoat","Start");
-    		boolean success = true;
-    		
-    		//Clearing all temp value from the graph
-    		for(int i = 0; i < 10; i++){
-    			for(int j = 0; j < 10; j++){
-    				//If the square was a temp before, ensure that its type is set to water
-    				if(graph[i][j].state == 3)
-    					graph[i][j].type = "water";
-    				graph[i][j].state = 0;
-    				
-    			}
-    		}
-    		
-    		if(x > 9 || x < 0 || y > 9 || y < 0){
-    			return false;
-    		}
-    		
-    		boolean[] valid = new boolean[boat.length];
-    		
-    		for(int i = 0; i < boat.length; i++){
-    			if(graph[x][y].tag == "water"){
-    				valid[i] = false;
-    				switch(boat.direction){
-    					case 0:						//Direction = UP
-    						if((y - i) >= 0){
-    							if(graph[x][y-i].tag == "water")
-    								valid[i] = true;
-    						}
-    						break;
-    					case 1:						//Direction = RIGHT
-    						if((x + i) < 10){
-    							if(graph[x][y-i].tag == "water")
-    								valid[i] = true;
-    						}
-    						break;
-    					case 2:						//Direction = DOWN
-    						if((y + i) < 10){
-    							if(graph[x][y-i].tag == "water")
-    								valid[i] = true;
-    						}
-    						break;
-    					case 3:						//Direction = LEFT
-    						if((x - i) >= 0){
-    							if(graph[x][y-i].tag == "water")
-    								valid[i] = true;
-    						}
-    						break;
-    					default:
-    						System.out.println("You've been Trolled");
-    						break;
-    				}
-    			}
-    		}
-    		for(int i = 0; i < boat.length; i++){
-    			if(!valid[i]){
-    				success = false;
-    				Log.i("placeBoat","Bad Location");
-    			}
-    			else{Log.i("placeBoat","Good Location");}
-    		}
-    		if(success){
-	    		for(int i = 0; i < boat.length; i++){
-	    			String tempStr = "Boat Piece: " + String.valueOf(i);
-	    			Log.i("placeBoat", tempStr);
-	    			switch(boat.direction){
-	    				case 0:						//Direction = UP
-	    					graph[x][y-i].state = 3;
-	    					tempStr = boat.type + String.valueOf(i);
-	    					graph[x][y-i].type = tempStr;
-	    					tempStr = "Boat Piece: " + String.valueOf(i) + " placed.State: " + String.valueOf(graph[x][y-i].state);
-	    		    		Log.i("placeBoat", tempStr);
-	    					break;
-	    				case 1:						//Direction = RIGHT
-	    					graph[x + i][y].state = 3;
-	    					break;
-	    				case 2:						//Direction = DOWN
-	    					graph[x][y + i].state = 3;
-	    					break;
-	    				case 3:						//Direction = LEFT
-	    					graph[x - i][y].state = 3;
-	    					break;
-	    				default:
-	    					System.out.println("You've been Trolled");
-	    					break;
-	    			}
-	    		}
-    		}
-			Log.i("placeBoat","Finish");
-    		return success;
-    	}
     	
+		//Called when the user touches the screen.
+		//Takes coordinate of event and logs it
+		public void touch(int x, int y){
+			graph[x][y].state = 1;
+			Context context = getApplicationContext();
+			String temp = "You pressed " + x + ", " + y;
+			Toast toast = Toast.makeText(context, temp, Toast.LENGTH_SHORT);
+			toast.show();
+		}
+		
+		public boolean placeBoat(Boat boat, int x, int y){
+			Log.i("placeBoat","Start");
+			boolean success = true;
+			
+			if(x > 9 || x < 0 || y > 9 || y < 0){
+				return false;
+			}
+			
+			boolean[] valid = new boolean[boat.length];
+			
+			for(int i = 0; i < boat.length; i++){
+				if(graph[x][y].tag == "water"){
+					valid[i] = false;
+					switch(boat.direction){
+						case 0:						//Direction = UP
+							if((y - i) >= 0){
+								if(graph[x][y-i].tag == "water")
+									valid[i] = true;
+							}
+							break;
+						case 1:						//Direction = RIGHT
+							if((x + i) < 10){
+								if(graph[x + i][y].tag == "water")
+									valid[i] = true;
+							}
+							break;
+						case 2:						//Direction = DOWN
+							if((y + i) < 10){
+								if(graph[x][y + i].tag == "water")
+									valid[i] = true;
+							}
+							break;
+						case 3:						//Direction = LEFT
+							if((x - i) >= 0){
+								if(graph[x - i][y].tag == "water")
+									valid[i] = true;
+							}
+							break;
+						default:
+							System.out.println("You've been Trolled");
+							break;
+					}
+				}
+			}
+			for(int i = 0; i < boat.length; i++){
+				if(!valid[i])
+					success = false;
+				else{Log.i("placeBoat","Bad Location");}
+			}
+			//If there is a collision ensure that all the squares are reverted to being water
+			if(success){
+				for(int i = 0; i < boat.length; i++){
+					String tempStr = "Boat Piece: " + String.valueOf(i);
+					Log.i("placeBoat", tempStr);
+					switch(boat.direction){
+						case 0:						//Direction = UP
+							graph[x][y-i].tag = "boat";
+							tempStr = "Boat Piece: " + String.valueOf(i) + " placed";
+				    		Log.i("placeBoat", tempStr);
+							break;
+						case 1:						//Direction = RIGHT
+							graph[x + i][y].tag = "boat";
+							break;
+						case 2:						//Direction = DOWN
+							graph[x][y + i].tag = "boat";
+							break;
+						case 3:						//Direction = LEFT
+							graph[x - i][y].tag = "boat";
+							break;
+						default:
+							System.out.println("You've been Trolled");
+							break;
+					}
+				}
+			}
+			Log.i("placeBoat","Finish");
+			return success;
+		}
+		
+		public boolean placeBoatTemp(Boat boat, int x, int y){
+			Log.i("placeBoat","Start");
+			boolean success = true;
+			
+			//Clearing all temp value from the graph
+			for(int i = 0; i < 10; i++){
+				for(int j = 0; j < 10; j++){
+					//If the square was a temp before, ensure that its type is set to water
+					if(graph[i][j].state == 3)
+						graph[i][j].type = "water";
+					graph[i][j].state = 0;
+					
+				}
+			}
+				
+			if(x > 9 || x < 0 || y > 9 || y < 0){
+				return false;
+			}
+				
+			boolean[] valid = new boolean[boat.length];
+				
+			for(int i = 0; i < boat.length; i++){
+				if(graph[x][y].tag == "water"){
+					valid[i] = false;
+					switch(boat.direction){
+						case 0:						//Direction = UP
+							if((y - i) >= 0){
+								if(graph[x][y-i].tag == "water")
+									valid[i] = true;
+							}
+							break;
+						case 1:						//Direction = RIGHT
+							if((x + i) < 10){
+								if(graph[x][y-i].tag == "water")
+									valid[i] = true;
+							}
+							break;
+						case 2:						//Direction = DOWN
+							if((y + i) < 10){
+								if(graph[x][y-i].tag == "water")
+									valid[i] = true;
+							}
+							break;
+						case 3:						//Direction = LEFT
+							if((x - i) >= 0){
+								if(graph[x][y-i].tag == "water")
+									valid[i] = true;
+							}
+							break;
+						default:
+							System.out.println("You've been Trolled");
+							break;
+					}
+				}
+			}
+			
+			for(int i = 0; i < boat.length; i++){
+				if(!valid[i]){
+					success = false;
+					Log.i("placeBoat","Bad Location");
+				}
+				else{Log.i("placeBoat","Good Location");}
+			}
+			if(success){
+				for(int i = 0; i < boat.length; i++){
+					String tempStr = "Boat Piece: " + String.valueOf(i);
+					Log.i("placeBoat", tempStr);
+					switch(boat.direction){
+						case 0:						//Direction = UP
+							graph[x][y-i].state = 3;
+							tempStr = boat.type + String.valueOf(i);
+							graph[x][y-i].type = tempStr;
+							tempStr = "Boat Piece: " + String.valueOf(i) + " placed.State: " + String.valueOf(graph[x][y-i].state);
+				    		Log.i("placeBoat", tempStr);
+							break;
+						case 1:						//Direction = RIGHT
+							graph[x + i][y].state = 3;
+							break;
+						case 2:						//Direction = DOWN
+							graph[x][y + i].state = 3;
+							break;
+						case 3:						//Direction = LEFT
+							graph[x - i][y].state = 3;
+							break;
+						default:
+							System.out.println("You've been Trolled");
+							break;
+					}
+				}
+			}
+			Log.i("placeBoat","Finish");
+			return success;
+		}
     }
-    
-    
-    
-    
-    
     
     
     
@@ -943,7 +968,11 @@ public class MainActivity extends ActionBarActivity {
  	}
  	
  	public void options_single_player(View v){
- 		singlePlayer = !singlePlayer;
+ 		singlePlayer = true;
+ 	}
+ 	
+ 	public void options_multi_player(View v){
+ 		singlePlayer = false;
  	}
  	
  	public void different_btn(View v){
@@ -1173,7 +1202,103 @@ public class MainActivity extends ActionBarActivity {
 	//#########################################################################################################################\\
 	//#########################################################################################################################\\
     
-    
+	/////////////////////////////////////////////////////////////////////////////////
+	//CHECK THIS SWEET SERVER CODE EXAMPLE
+	//In the real game, you should first check for open games with downloadGame
+	//Do not start with uploadGame
+	//
+	//1. Check for open games (if it doesn't find one it returns "{result = "no open games"}", otherwise returns the game)
+	//2. If there's no open games, make one with uploadGame (make up a unique gameID somehow)
+	/////////////////////////////////////////////////////////////////////////////////
+	
+    //Global Variables\\
+	Gson gson = new Gson();
+	private ServerCall downloader = null;				// Background downloader.
+	private static final String noOpenGame = "\"{result = \"no open games\"}\"";
+	public static final String SERVER_URL_PREFIX = "http://ucsc-cmps121-battleship.appspot.com/classexample/default/";
+	
+	public void checkForGame(){
+		String temp = "";						// string to compare with
+//		temp = downloadGame();				// set to return value of downloadGame
+		if(temp == noOpenGame){				// compare with noOpenGame
+			uploadGame();						// gengerate new game
+		}else{
+			parseDown(temp);					// parse down into game
+		}
+		
+	}
+	
+//	public String downloadGame(){
+//		//Convert game to HashMap
+//		HashMap<String, String> m = sGame.toHash();
+//		
+//		//Returns a specific closed game, or finds an open one and returns the gameID
+//		ServerCallSpec downloadSpec = new ServerCallSpec();
+//		downloadSpec.url = MainActivity.SERVER_URL_PREFIX + "downloadGame.json";
+//		m = new HashMap<String,String>();
+//		m.put("gameID", "Test");
+//		downloadSpec.setParams(m);
+//		downloadSpec.context = getApplication();
+//
+//		// Initiates server call.
+//		downloader = new ServerCall();
+//		downloader.execute(downloadSpec);
+//		
+//		try {
+//		    //Grab the result of the download
+//			PostProcessPair test = downloader.get();
+//			Log.d(LOG_TAG, test.result);
+//			//Convert download to game object
+//		    sGame = gson.fromJson(test.result, SerialGame.class);
+//		    Log.d(LOG_TAG, sGame.gameID);
+//		} catch (InterruptedException e) {
+//		    // TODO Auto-generated catch block
+//		    e.printStackTrace();
+//		} catch (ExecutionException e) {
+//		    // TODO Auto-generated catch block
+//		    e.printStackTrace();
+//		}
+//
+//		return null;
+//	}
+	
+	public void uploadGame(){
+		//Saves a game to a specific slot (gameID), or creates a new file if necessary
+		
+		//make game		
+		SerialGame sGame = new SerialGame();
+		sGame.gameID = randomGameID.nextGameId(); 				
+		sGame.maxPlayers = 2;
+		sGame.numPlayers = 1;
+		sGame.open = true;
+		sGame.playA = "Test String";
+		sGame.playB = "Test String";
+		sGame.turn = 0;
+
+		//Convert game to HashMap
+		HashMap<String, String> m = sGame.toHash();
+		
+		//SendSpec handles the server transaction, don't use the same one for uploads and downloads!
+		ServerCallSpec uploadSpec = new ServerCallSpec();
+		//Configure URL: Uploads use uploadGame, downloads use downloadGame
+		uploadSpec.url = MainActivity.SERVER_URL_PREFIX + "uploadGame.json";
+		uploadSpec.setParams(m);
+		uploadSpec.context = getApplication();
+
+		// Initiates and executes server call.
+		downloader = new ServerCall();
+		downloader.execute(uploadSpec);
+	}
+	
+	// class that should create a secure random string 
+	public final static class randomGameID{
+		private static SecureRandom random = new SecureRandom();
+		
+		public static String nextGameId(){
+			return new BigInteger(130, random).toString(32);
+		}
+	}
+	
     public void parseUp(){
     	String temp = "";
     	for(int i = 0; i < 10; i++){
@@ -1187,9 +1312,10 @@ public class MainActivity extends ActionBarActivity {
     	
     }
     
-    public void parseDown(){
+    public void parseDown(String server){
+    	
     	//GET TEMP STRING FROM SERVER
-    	String temp = "";
+    	String temp = server;
     	
     	//Constructing a string that represents the most recent version of the enemies attack array
     	String temp1 = "";
@@ -1220,22 +1346,6 @@ public class MainActivity extends ActionBarActivity {
 	    	}
 	    	boats_remaining = 17 - tempCounter;
     	}
-    }
-    
-    //Classic CS node data type
-    //Sits in a graph, holds information
-    public class Node{
-    	int x,y;			//Coordinates of the node [0-9][0-9]
-    	int state;			//0 = Nothing, 1 = hit   // 3 = temp      I wanted this to be an int in case we get into complex types
-    	String tag;			//This is a string representation of the state of a node. Used to denote whether the node is water, boat, or temp
-    	String type;		//What type of boat is this node? 
-    	public Node(int x, int y){
-    		tag = "water";
-    		type = "water";
-    		this.x = x;
-    		this.y = y;
-    		state = 0;
-    	}	
     }
     
     

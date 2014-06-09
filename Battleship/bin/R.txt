@@ -244,7 +244,6 @@ int drawable i_do_nothing 0x7f02005d
 int drawable ic_launcher 0x7f02005e
 int drawable miss 0x7f02005f
 int drawable temp_boat 0x7f020060
-int id CheckBox01 0x7f050044
 int id action_bar 0x7f05001c
 int id action_bar_activity_content 0x7f050015
 int id action_bar_container 0x7f05001b
@@ -280,6 +279,7 @@ int id image 0x7f050027
 int id listMode 0x7f050001
 int id list_item 0x7f050029
 int id middle 0x7f050012
+int id multipPlayer_checkBox 0x7f050044
 int id never 0x7f050009
 int id none 0x7f050010
 int id normal 0x7f050000
@@ -348,9 +348,7 @@ int layout options 0x7f03001b
 int layout setup_game 0x7f03001c
 int layout support_simple_spinner_dropdown_item 0x7f03001d
 int layout win 0x7f03001e
-int menu get_test 0x7f0c0000
-int menu main 0x7f0c0001
-int menu test 0x7f0c0002
+int menu main 0x7f0c0000
 int string Options 0x7f0a0013
 int string Setup 0x7f0a0015
 int string abc_action_bar_home_description 0x7f0a0001
