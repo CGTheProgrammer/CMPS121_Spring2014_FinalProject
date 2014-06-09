@@ -71,7 +71,7 @@ public class ServerCall extends AsyncTask<ServerCallSpec, String, PostProcessPai
 					}
 					if (iStream != null) {
 						downloadedString = ConvertStreamToString(iStream);
-						Log.d(LOG_TAG, "Received string: " + downloadedString);
+						//Log.d(LOG_TAG, "Received string: " + downloadedString);
 						// Postprocess the result.
 						PostProcessPair instr = new PostProcessPair();
 						instr.spec = spec;
@@ -90,7 +90,7 @@ public class ServerCall extends AsyncTask<ServerCallSpec, String, PostProcessPai
 
 	protected void onPostExecute(PostProcessPair instr) {
 		// This is executed in the UI thread.
-		instr.spec.useResult(instr.spec.context, instr.result);
+		instr.spec.useResult(instr.result);
 	}
 	
 	private static String ConvertStreamToString(InputStream is) {

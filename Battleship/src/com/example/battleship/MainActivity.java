@@ -33,6 +33,7 @@ import org.json.JSONObject;
 import com.example.battleship.ServerCall;
 import com.example.battleship.ServerCallSpec;
 import com.example.battleship.SerialGame;
+import com.example.battleship.ServerIO;
 import com.google.gson.Gson;
 
 import android.app.Activity;
@@ -90,6 +91,10 @@ public class MainActivity extends Activity {
 	// Background downloader.
 	private ServerCall downloader = null;
 	public static final String SERVER_URL_PREFIX = "http://ucsc-cmps121-battleship.appspot.com/classexample/default/";
+	
+	private static String URL = "http://ucsc-cmps121-battleship.appspot.com/classexample/default/";
+	private static String DOWNLOADPOSTFIX = "downloadGame.json";
+	private static String UPLOADPOSTFIX = "uploadGame.json";
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -161,59 +166,78 @@ public class MainActivity extends Activity {
         //Saves a game to a specific slot (gameID), or creates a new file if necessary
         
         //Fake game
-        SerialGame sGame = new SerialGame();
-        sGame.gameID = "Test"; //Use a random number or device ID for this
-        sGame.maxPlayers = 2;
-        sGame.numPlayers = 1;
-        sGame.open = true;
-        sGame.playA = "Test String";
-        sGame.playB = "Test String";
-        sGame.turn = 0;
+        SerialGame localGame = new SerialGame();
+        localGame.gameID = "Test"; //Use a random number or device ID for this
+        localGame.maxPlayers = 2;
+        localGame.numPlayers = 1;
+        localGame.open = true;
+        localGame.playA = "Test String";
+        localGame.playB = "Test String";
+        localGame.turn = 0;
         
-        //Convert game to HashMap
-        HashMap<String, String> m = sGame.toHash();
+        SerialGame remoteGame = new SerialGame();
         
-        //SendSpec handles the server transaction, don't use the same one for uploads and downloads!
-        ServerCallSpec uploadSpec = new ServerCallSpec();
-        //Configure URL: Uploads use uploadGame, downloads use downloadGame
-		uploadSpec.url = MainActivity.SERVER_URL_PREFIX + "uploadGame.json";
-		uploadSpec.setParams(m);
-		uploadSpec.context = getApplication();
-
-		// Initiates and executes server call.
-		downloader = new ServerCall();
-		downloader.execute(uploadSpec);
-		
-		///////////////////////////////////////////////////////////////////////
-		//Download Example
-		//Returns a specific closed game, or finds an open one and returns the gameID
-		ServerCallSpec downloadSpec = new ServerCallSpec();
-		downloadSpec.url = MainActivity.SERVER_URL_PREFIX + "downloadGame.json";
-		m = new HashMap<String,String>();
-		m.put("gameID", "Test");
-		downloadSpec.setParams(m);
-		downloadSpec.context = getApplication();
-
-		// Initiates server call.
-		downloader = new ServerCall();
-		downloader.execute(downloadSpec);
-		
-		
-		
-		try {
-			//Grab the result of the download
-			PostProcessPair test = downloader.get();
-			Log.d(LOG_TAG, test.result);
-			//Convert download to game object
-			sGame = gson.fromJson(test.result, SerialGame.class);
-			Log.d(LOG_TAG, sGame.gameID);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        ServerIO sIO = new ServerIO(URL, DOWNLOADPOSTFIX, UPLOADPOSTFIX);
+        Log.d(LOG_TAG, "Trying to find open game");
+        sIO.uploadJSON(localGame);
+        remoteGame = sIO.downloadJSON(); //Find open game
+        if (remoteGame.result.equals("no open games"))
+        {
+        	//Failed to find open game, make one
+        	Log.d(LOG_TAG, "No open game found, creating new game");
+        	Log.d(LOG_TAG, "Result: " + String.valueOf(sIO.uploadJSON(localGame)));
+        }
+        else
+        {
+        	Log.d(LOG_TAG, "Found open game!");
+        	Log.d(LOG_TAG, gson.toJson(remoteGame, SerialGame.class)); //Open game found!
+        }
+        sIO.uploadJSON(localGame); //Save: Upload to gameID contained in SerialGame input, or make a new save with that ID
+        remoteGame = sIO.downloadJSON("test"); //Download save with ID "test"
+        Log.d(LOG_TAG, gson.toJson(remoteGame, SerialGame.class));
+        
+//        //Convert game to HashMap
+//        HashMap<String, String> m = sGame.toHash();
+//        
+//        //SendSpec handles the server transaction, don't use the same one for uploads and downloads!
+//        ServerCallSpec uploadSpec = new ServerCallSpec();
+//        //Configure URL: Uploads use uploadGame, downloads use downloadGame
+//		uploadSpec.url = MainActivity.SERVER_URL_PREFIX + "uploadGame.json";
+//		uploadSpec.setParams(m);
+//
+//		// Initiates and executes server call.
+//		downloader = new ServerCall();
+//		downloader.execute(uploadSpec);
+//		
+//		///////////////////////////////////////////////////////////////////////
+//		//Download Example
+//		//Returns a specific closed game, or finds an open one and returns the gameID
+//		ServerCallSpec downloadSpec = new ServerCallSpec();
+//		downloadSpec.url = MainActivity.SERVER_URL_PREFIX + "downloadGame.json";
+//		m = new HashMap<String,String>();
+//		m.put("gameID", "Test");
+//		downloadSpec.setParams(m);
+//
+//		// Initiates server call.
+//		downloader = new ServerCall();
+//		downloader.execute(downloadSpec);
+//		
+//		
+//		
+//		try {
+//			//Grab the result of the download
+//			PostProcessPair test = downloader.get();
+//			Log.d(LOG_TAG, test.result);
+//			//Convert download to game object
+//			sGame = gson.fromJson(test.result, SerialGame.class);
+//			Log.d(LOG_TAG, sGame.gameID);
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (ExecutionException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
         
 		////////////////////////////////////////////////////////////////////////
 		//END SWEET SERVER CODE EXAMPLE

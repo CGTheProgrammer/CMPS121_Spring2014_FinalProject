@@ -63,22 +63,21 @@ def uploadGame():
         playA=playA0,
         playB=playB0
         )
-    return dict(result='ok')
+    return dict(gameID=gameID0)
 
 #Returns a specific closed game, or finds an open one and returns the gameID
 def downloadGame():
     gameID0 = request.vars.gameID
-    if gameID0 is not None:
-        row = db(db.game0.gameID==gameID0).select().first()
-        return dict(gameID = row.gameID, open = row.open, numPlayers = row.numPlayers, turn = row.turn, playA = row.playA, playB = row.playB)
+    gameSearch = "find"
+    if gameID0==gameSearch:
+		#If gameID is not given, find an open game
+        row = db(db.game0.open=="true").select().first()
+        if row is None: return dict(result='no open games') #No open games, tell them to make one!
+        else: return dict(gameID = row.gameID, open = row.open, numPlayers = row.numPlayers, turn = row.turn, playA = row.playA, playB = row.playB, result='found open game')
     else:
-        #If gameID is not given, find an open game
-        row = db(db.game0.open=="True").select().first()
-        if row is not None and row.gameID is not None:
-            return dict(gameID = row.gameID, open = row.open, numPlayers = row.numPlayers, turn = row.turn, playA = row.playA, playB = row.playB)
-        else:
-            #No open games, tell them to make one!
-            return dict(result='no open games')
+		row = db(db.game0.gameID==gameID0).select().first()
+		if row is not None: return dict(gameID = row.gameID, open = row.open, numPlayers = row.numPlayers, turn = row.turn, playA = row.playA, playB = row.playB, result='found closed game')
+		else: return dict(result = "bad gameID");
 
 
 def make_key_pair(a, k):

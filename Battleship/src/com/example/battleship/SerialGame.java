@@ -15,10 +15,12 @@ public class SerialGame {
 	public String playA;
 	public String playB;
 	
+	public String result;
 	
-	public HashMap<String,String> toHash()
+	
+	public HashMap<String, String> toHash()
 	{
-		HashMap<String,String> m = new HashMap<String,String>();
+		HashMap<String, String> m = new HashMap<String, String>();
 		m.put("gameID", gameID);
 		m.put("open", String.valueOf(open));
 		m.put("numPlayers", String.valueOf(numPlayers));

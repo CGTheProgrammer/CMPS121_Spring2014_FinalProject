@@ -11,7 +11,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.message.BasicNameValuePair;
 
-import android.content.Context;
+
 import android.util.Log;
 
 public class ServerCallSpec {
@@ -22,9 +22,9 @@ public class ServerCallSpec {
 	ServerCallSpec() {};
 
 	public String url;
-	public Context context;
+	//public Context context;
 	public UrlEncodedFormEntity form;
-	public void useResult(Context context, String r) {}
+	public void useResult(String r) {}
 	
 	public boolean setParams(HashMap<String, String> params) {
 		List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
