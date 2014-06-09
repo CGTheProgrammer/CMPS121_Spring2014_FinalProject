@@ -2312,6 +2312,8 @@ public class MainActivity extends ActionBarActivity {
 	public  String localGameID;							// Randomly generated string for Game ID
 	public int localNumPlayers;							// Number of players on a game
 	public int playerID;								// 0 = playerA; 1 = playerB
+	public String boatA;								// String to represent location of our boats
+	public String boatB;								// String to represent location of opponent boats
 	private static final String URL = "http://ucsc-cmps121-battleship.appspot.com/classexample/default/";
 	public  static final String SERVER_URL_PREFIX = "http://ucsc-cmps121-battleship.appspot.com/classexample/default/";
 	private static final String DOWNLOADPOST = "downloadGame.json";
@@ -2341,9 +2343,11 @@ public class MainActivity extends ActionBarActivity {
 			if(playerID == 0){												// update local graphs depending on which player we are
 				parseDownA(remoteGame.playA);
 				parseDownA(remoteGame.playB);
+				parseBoatsDown(remoteGame.boatB);
 			}else{
 				parseDownA(remoteGame.playB);
 				parseDownB(remoteGame.playA);
+				parseBoatsDown(remoteGame.boatA);
 			}
 		}
 	}
@@ -2375,6 +2379,8 @@ public class MainActivity extends ActionBarActivity {
 		sGame.playA = null;
 		sGame.playB = null;
 		sGame.turn = 0;
+		sGame.boatA = boatA;
+		sGame.boatB = boatB;
 		return sGame;
 	}
 	
@@ -2387,9 +2393,11 @@ public class MainActivity extends ActionBarActivity {
 		if(playerID == 0){
 			sGame.playA = parseAUp();		//parse our attacks into A
 			sGame.playB = parseBUp();		//parse opponent attacks into B
+			sGame.boatA = parseBoats();		//pares our boats into boatA
 		}else{
 			sGame.playB = parseAUp();		//parse our attacks into B
 			sGame.playA = parseBUp();		//parse opponent attacks into A
+			sGame.boatB = parseBoats();		//pares our boats into boatB
 		}
 		sGame.turn = turn;					
 		return sGame;
@@ -2485,34 +2493,36 @@ public class MainActivity extends ActionBarActivity {
     	}
     }
     
+    // parse our boat location into a string and return that string
     public String parseBoats(){
-
         //Constructing a string that represents boat location
         String temp = null;
         for(int i = 0; i < 10; i++){
-         for(int j = 0; j < 10; j++){
-          if(aGraph.graph[i][j].tag == "boat") temp += String.valueOf(1);
-          else temp += String.valueOf(0);
-         }
+        	for(int j = 0; j < 10; j++){
+        		if(aGraph.graph[i][j].tag == "boat") temp += String.valueOf(1);
+        		else temp += String.valueOf(0);
+        	}
         }
         return temp;
-       }
-       
-       public void parseBoatsDown(String server){
-        String temp = server;
+    }
+   
+   // take string of opponent boat locations and parse it into bGraph.graph
+   public void parseBoatsDown(String server){
         
-        for(int i = 0; i < 10; i++){
-         for(int j = 0; j < 10; j++){
-          int tempI = i;
-          int tempJ = j;
-          if(tempI == 0 && j > 0) tempI = 10;
-          if(tempJ == 0) tempJ = 1;
+	   String temp = server;
+        
+	   for(int i = 0; i < 10; i++){
+		   for(int j = 0; j < 10; j++){
+			   int tempI = i;
+			   int tempJ = j;
+			   if(tempI == 0 && j > 0) tempI = 10;
+			   if(tempJ == 0) tempJ = 1;
           
           
-          if(temp.charAt(tempI * tempJ) == '0'){ bGraph.graph[i][j].tag = "water";}
-          else if(temp.charAt(tempI * tempJ) == '1'){ bGraph.graph[i][j].tag = "boat";}
-         }
-        }
-       }
+			   if(temp.charAt(tempI * tempJ) == '0'){ bGraph.graph[i][j].tag = "water";}
+			   else if(temp.charAt(tempI * tempJ) == '1'){ bGraph.graph[i][j].tag = "boat";}
+		   }
+	   }
+   }
     
 }

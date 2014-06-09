@@ -14,6 +14,8 @@ public class SerialGame {
 	
 	public String playA;
 	public String playB;
+	public String boatA;
+	public String boatB;
 	
 	public String result;
 	
@@ -28,6 +30,8 @@ public class SerialGame {
 		m.put("turn", String.valueOf(turn));
 		m.put("playA", playA);
 		m.put("playB", playB);
+		m.put("boatA", boatA);
+		m.put("boatB", boatB);
 		return m;
 	}
 }
