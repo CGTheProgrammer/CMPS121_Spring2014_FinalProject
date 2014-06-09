@@ -299,29 +299,44 @@ public class MainActivity extends ActionBarActivity {
 	        			}
 	        			else{//This is what happens when attacking in multiplayer
 	        				//Update the turn variable from the server
+	        				int numAttacksA = 0;
+	        				int numAttacksB = 0;
+	        				for(int i = 0; i < 10; i++){
+	        					for(int j = 0; j < 10; j++){
+	        						if(aAttacks[i][j])
+	        							numAttacksA++;
+	        						else if(bAttacks[i][j])
+	        							numAttacksB++;
+	        					}
+	        				}
+	        				if(numAttacksA <= numAttacksB)
+	        					canAttack = true;
+	        				else{canAttack = false;}
 	        				if(canAttack){
 		        				turn++;
-		        				if(ai.aiGraph.graph[(int)x][(int)y].state != 3){
+		        				if(bGraph.graph[(int)x][(int)y].state != 3){
 		        					//Clearing the temp tags
 		        					for(int i = 0; i < 10; i++){
 		        						for(int j = 0; j < 10; j++){
-		        							if(ai.aiGraph.graph[i][j].state == 3)
-		        								ai.aiGraph.graph[i][j].state = 0;
+		        							if(bGraph.graph[i][j].state == 3)
+		        								bGraph.graph[i][j].state = 0;
 		        						}
 		        					}
 		        					
-		        					ai.aiGraph.graph[(int)x][(int)y].state = 3;
+		        					bGraph.graph[(int)x][(int)y].state = 3;
 		        				}
-		        				else if(ai.aiGraph.graph[(int)x][(int)y].state == 3){
-		        					ai.aiGraph.touch((int)x, (int)y);
+		        				else if(bGraph.graph[(int)x][(int)y].state == 3){
+		        					bGraph.touch((int)x, (int)y);
 			        				aAttacks[(int)x][(int)y] = true;
 		        					//Clearing the temp tags
 		        					for(int i = 0; i < 10; i++){
 		        						for(int j = 0; j < 10; j++){
-		        							if(ai.aiGraph.graph[i][j].state == 3)
-		        								ai.aiGraph.graph[i][j].state = 0;
+		        							if(bGraph.graph[i][j].state == 3)
+		        								bGraph.graph[i][j].state = 0;
 		        						}
 		        					}
+			        				setContentView(game);
+
 		        				}
 		        				//Needs to upload turn variable to server
 		        				uploadGame();
@@ -1385,7 +1400,7 @@ public class MainActivity extends ActionBarActivity {
 	    					Log.i("Draw","Drawing aAttacks");
     						w = (int)(sizeY * 0.0666);
 	    					h = (int)(sizeX / 10);
-	    					if(ai.aiGraph.graph[i][j].tag == "boat"){
+	    					if(bGraph.graph[i][j].tag == "boat"){
 	    						images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.hit);
 	    					}
 	    					else{images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.miss);}
