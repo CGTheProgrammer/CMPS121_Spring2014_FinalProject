@@ -181,6 +181,7 @@ public class MainActivity extends ActionBarActivity {
 		        			attack.draw(canvas);
 	        			}
 	        			else{
+	        				reset();
 	        				setContentView(R.layout.activity_main);
 	        				curView = 0;
 	        			}
@@ -323,7 +324,7 @@ public class MainActivity extends ActionBarActivity {
 		        					}
 		        				}
 		        				//Needs to upload turn variable to server
-		        				parseUp();
+		        				uploadGame();
 	        				}
 	        			}
 
@@ -331,9 +332,16 @@ public class MainActivity extends ActionBarActivity {
 	        		}
 	        		//If the player pushes the button at the bottom of the screen, change view
 	        		else if(y >= 10){
-	        			setContentView(game);
-	        			curView = 3;
-	        			game.draw(canvas);
+	        			if(x >= 5){
+	        				setContentView(game);
+	        				curView = 3;
+	        				game.draw(canvas);
+	        			}
+	        			else{
+	        				reset();
+	        				curView = 0;
+	        				setContentView(R.layout.activity_main);
+	        			}
 	        		}
 	    	        attack.invalidate();
 	        	}
@@ -977,9 +985,6 @@ public class MainActivity extends ActionBarActivity {
     		ty = (float) (ty * 0.75);
     		float by = getHeight();
     		canvas.drawRect(lx, ty, rx, by, paint);
-    		paint.setColor(Color.BLACK);
-    		paint.setTextSize(20);
-    		canvas.drawText("Go To ATTACK!", rx/2, ((ty + by) / 2), paint);
     		int w = (int)(getHeight() * 0.25);
     		int h = (int)(getWidth() / 2);
     		main_menu = BitmapFactory.decodeResource(getResources(), R.drawable.battleship_main_menu_btn);
@@ -1213,12 +1218,9 @@ public class MainActivity extends ActionBarActivity {
     		float lx = 0;
     		float rx = getWidth();
     		float ty = getHeight();
-    		ty -= getHeight() / 12;
+    		ty = (float) (ty * 0.75);
     		float by = getHeight();
     		canvas.drawRect(lx, ty, rx, by, paint);
-    		paint.setColor(Color.RED);
-    		paint.setTextSize(20);
-    		canvas.drawText("Go To Main", rx/2, ((ty + by) / 2), paint);
     		
     		int w = (int)(getHeight() * 0.25);
     		int h = (int)(getWidth() / 2);
@@ -1317,8 +1319,8 @@ public class MainActivity extends ActionBarActivity {
 	    				if(ai.aiGraph.graph[i][j].state == 3){			//Rendering Temporary Attacks
 	    					lx = i * (sizeX / 10);
 	    					rx = lx + (sizeX / 10);
-	    					by = (float)((j * (sizeY*0.066)) + (sizeY * 0.083));
-	    					ty = (float)(by - sizeY * 0.066);
+	    					ty = yPos;
+	    					by = (float)(yPos + (sizeY * 0.0666));
 	    		    		paint.setColor(Color.BLACK);
 	    					canvas.drawRect(lx, ty, rx, by, paint);
 	    					
@@ -1358,8 +1360,8 @@ public class MainActivity extends ActionBarActivity {
     					if(bGraph.graph[i][j].state == 3){			//Rendering Temporary Attacks
 	    					lx = i * (sizeX / 10);
 	    					rx = lx + (sizeX / 10);
-	    					by = (float)((j * (sizeY*0.066)) + (sizeY * 0.083));
-	    					ty = (float)(by - sizeY * 0.066);
+	    					ty = yPos;
+	    					by = (float)(yPos + (sizeY * 0.0666));
 	    		    		paint.setColor(Color.BLACK);
 	    					canvas.drawRect(lx, ty, rx, by, paint);
 	    					
@@ -1405,7 +1407,13 @@ public class MainActivity extends ActionBarActivity {
 	    					if(ai.aiGraph.graph[i][j].tag == "boat"){
 	    						images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.hit);
 	    					}
+	    					if(bGraph.graph[i][j].tag == "boat"){
+	    						images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.hit);
+	    					}
 	    					else{images[i][j] = BitmapFactory.decodeResource(getResources(), R.drawable.miss);}
+	    					
+	    					
+	    					
 	    					
 	    					if(h > 0 && w > 0){
 	    						images[i][j] = Bitmap.createScaledBitmap(images[i][j], h, w, false);
@@ -1560,8 +1568,10 @@ public class MainActivity extends ActionBarActivity {
     				if(aGraph.graph[i][j].state == 3){
     					lx = i * (sizeX / 10);
     					rx = lx + (sizeX / 10);
-    					by = (float)((j * (sizeY*0.0666)) + (sizeY * 0.083));
-    					ty = (float)(by - sizeY * 0.0666);
+    					//by = (float)((j * (sizeY*0.0666)) + (sizeY * 0.083));
+    					//ty = (float)(by - sizeY * 0.0666);
+    					ty = yPos;
+    					by = (float)(yPos + (sizeY * 0.0666));
     		    		paint.setColor(Color.YELLOW);
     					canvas.drawRect(lx, ty, rx, by, paint);
     				}
@@ -2324,6 +2334,7 @@ public class MainActivity extends ActionBarActivity {
 	public SerialGame makeGame(){
 		//make a new game and save relevent variables locally	
 		SerialGame sGame = new SerialGame();
+		canAttack = true;
 		sGame.gameID = randomGameID.nextGameId();
 		localGameID = sGame.gameID;								// save locally
 		sGame.maxPlayers = 2;
