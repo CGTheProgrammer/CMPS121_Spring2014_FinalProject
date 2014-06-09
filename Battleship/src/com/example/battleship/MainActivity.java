@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 
 import com.google.gson.Gson;
 
@@ -214,8 +215,6 @@ public class MainActivity extends ActionBarActivity {
 		        						}
 		        					}
 		        				}
-		        				//Needs to upload turn variable to server
-		        				parseUp();
 	        				}
 	        			}
 
@@ -1211,65 +1210,71 @@ public class MainActivity extends ActionBarActivity {
 	//2. If there's no open games, make one with uploadGame (make up a unique gameID somehow)
 	/////////////////////////////////////////////////////////////////////////////////
 	
-    //Global Variables\\
+    //Server Variables\\
 	Gson gson = new Gson();
 	private ServerCall downloader = null;				// Background downloader.
+	public static String localGameID;					// Randomly gengerated string for Game ID
+	public int localNumPlayers;							// Number of players on a game
+	public int playerID;								// 0 = playerA; 1 = playerB
 	private static final String noOpenGame = "\"{result = \"no open games\"}\"";
 	public static final String SERVER_URL_PREFIX = "http://ucsc-cmps121-battleship.appspot.com/classexample/default/";
 	
 	public void checkForGame(){
-		String temp = "";						// string to compare with
-//		temp = downloadGame();				// set to return value of downloadGame
+		String temp = "";					// string to compare with
+		temp = downloadGame();				// set to return value of downloadGame
 		if(temp == noOpenGame){				// compare with noOpenGame
 			uploadGame();						// gengerate new game
 		}else{
 			parseDown(temp);					// parse down into game
 		}
-		
 	}
 	
-//	public String downloadGame(){
-//		//Convert game to HashMap
-//		HashMap<String, String> m = sGame.toHash();
-//		
-//		//Returns a specific closed game, or finds an open one and returns the gameID
-//		ServerCallSpec downloadSpec = new ServerCallSpec();
-//		downloadSpec.url = MainActivity.SERVER_URL_PREFIX + "downloadGame.json";
-//		m = new HashMap<String,String>();
-//		m.put("gameID", "Test");
-//		downloadSpec.setParams(m);
-//		downloadSpec.context = getApplication();
-//
-//		// Initiates server call.
-//		downloader = new ServerCall();
-//		downloader.execute(downloadSpec);
-//		
-//		try {
-//		    //Grab the result of the download
-//			PostProcessPair test = downloader.get();
-//			Log.d(LOG_TAG, test.result);
-//			//Convert download to game object
-//		    sGame = gson.fromJson(test.result, SerialGame.class);
-//		    Log.d(LOG_TAG, sGame.gameID);
-//		} catch (InterruptedException e) {
-//		    // TODO Auto-generated catch block
-//		    e.printStackTrace();
-//		} catch (ExecutionException e) {
-//		    // TODO Auto-generated catch block
-//		    e.printStackTrace();
-//		}
-//
-//		return null;
-//	}
+	public String downloadGame(){
+		SerialGame sGame = convertCurrGame();
+		//Convert game to HashMap
+		HashMap<String, String> m = sGame.toHash();
+		
+		//Returns a specific closed game, or finds an open one and returns the gameID
+		ServerCallSpec downloadSpec = new ServerCallSpec();
+		downloadSpec.url = MainActivity.SERVER_URL_PREFIX + "downloadGame.json";
+		m = new HashMap<String,String>();
+		m.put("gameID", "Test");
+		downloadSpec.setParams(m);
+		downloadSpec.context = getApplication();
+
+		// Initiates server call.
+		downloader = new ServerCall();
+		downloader.execute(downloadSpec);
+		
+		try {
+		    //Grab the result of the download
+			PostProcessPair test = downloader.get();
+			Log.d(LOG_TAG, test.result);
+			//Convert download to game object
+		    sGame = gson.fromJson(test.result, SerialGame.class);
+		    Log.d(LOG_TAG, sGame.gameID);
+		} catch (InterruptedException e) {
+		    // TODO Auto-generated catch block
+		    e.printStackTrace();
+		} catch (ExecutionException e) {
+		    // TODO Auto-generated catch block
+		    e.printStackTrace();
+		}
+
+		return null;
+	}
 	
 	public void uploadGame(){
 		//Saves a game to a specific slot (gameID), or creates a new file if necessary
 		
-		//make game		
+		//make game and save relevent variables locally	
+		playerID = 0;
 		SerialGame sGame = new SerialGame();
-		sGame.gameID = randomGameID.nextGameId(); 				
+		sGame.gameID = randomGameID.nextGameId();
+		localGameID = sGame.gameID;
 		sGame.maxPlayers = 2;
 		sGame.numPlayers = 1;
+		localNumPlayers = 1;
 		sGame.open = true;
 		sGame.playA = "Test String";
 		sGame.playB = "Test String";
@@ -1299,17 +1304,43 @@ public class MainActivity extends ActionBarActivity {
 		}
 	}
 	
-    public void parseUp(){
+	public SerialGame convertCurrGame(){
+		SerialGame sGame = new SerialGame();
+		sGame.gameID = localGameID;			
+		sGame.maxPlayers = 2;
+		sGame.numPlayers = localNumPlayers;
+		// set playA and playB
+		if(playerID == 0){
+			sGame.playA = parseAUp();		//parse our attacks into A
+			sGame.playB = parseBUp();		//parse opponent attacks into B
+		}else{
+			sGame.playB = parseAUp();		//parse our attacs into B
+			sGame.playA = parseBUp();		//parse opponent attacks into A
+		}
+		sGame.turn = turn;					
+		return sGame;
+	}
+	
+    public String parseAUp(){
     	String temp = "";
     	for(int i = 0; i < 10; i++){
     		for(int j = 0; j < 10; j++){
-    			if(aAttacks[i][j]) temp += String.valueOf(1);
-    			else temp += String.valueOf(0);
+    			if(aAttacks[i][j]) temp.concat(String.valueOf(1));
+    			else temp.concat(String.valueOf(0));
     		}
     	}
-    	
-    	//SEND TEMP TO THE SERVER
-    	
+    	return temp;  	
+    }
+    
+    public String parseBUp(){
+    	String temp = "";
+    	for(int i = 0; i < 10; i++){
+    		for(int j = 0; j < 10; j++){
+    			if(bAttacks[i][j]) temp.concat(String.valueOf(1));
+    			else temp.concat(String.valueOf(0));
+    		}
+    	}
+    	return temp;
     }
     
     public void parseDown(String server){
