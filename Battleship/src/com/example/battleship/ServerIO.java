@@ -85,6 +85,8 @@ public class ServerIO {
 		SerialGame outputGame = new SerialGame();
 		HashMap<String, String> m = new HashMap<String, String>();
 		
+		Log.d(LOG_TAG, String.valueOf(inputGame.open));
+		
         //SendSpec handles the server transaction, don't use the same one for uploads and downloads!
         ServerCallSpec uploadSpec = new ServerCallSpec();
         //Configure URL: Uploads use uploadGame, downloads use downloadGame

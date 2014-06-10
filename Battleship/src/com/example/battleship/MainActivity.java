@@ -53,6 +53,7 @@ public class MainActivity extends ActionBarActivity {
 	public Boat[] boats;					//An array that stores all of the players boats
 	Canvas canvas;
 
+	static final private String LOG_TAG = "Main";
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -2350,12 +2351,13 @@ public class MainActivity extends ActionBarActivity {
 	public void downloadGame(){
 		if(localGameID == null){								// we currently are not part of a game
 			remoteGame = sIO.downloadJSON();						// look for a game
-			Log.i("Download", "Trying to find open game");			
+			Log.d(LOG_TAG, "Trying to find open game");			
 			if(remoteGame.result.equals("no open games")){		// no open games
-				Log.i("Download", "Trying to setup game");
+				Log.d("Download", "Trying to setup game");
 				SerialGame sGame = makeGame();						// make game
 				sIO.uploadJSON(sGame);								// upload game												
 			}else{
+				Log.d(LOG_TAG, "Open game found");
 				localGameID = remoteGame.gameID;						// store gameID locally
 				remoteGame.numPlayers = 2;								// edit numPlayers
 				remoteGame.open = false;								// edit open
@@ -2363,6 +2365,7 @@ public class MainActivity extends ActionBarActivity {
 				sIO.uploadJSON(remoteGame);								//
 			}
 		}else{
+			Log.d(LOG_TAG, "Trying to download game from gameID");
 			remoteGame = sIO.downloadJSON(localGameID);						// download game with known gameID
 			if(playerID == 0){												// update local graphs depending on which player we are
 				parseDownA(remoteGame.playA);
@@ -2400,8 +2403,8 @@ public class MainActivity extends ActionBarActivity {
 		sGame.numPlayers = 1;
 		localNumPlayers = 1;
 		sGame.open = true;
-		sGame.playA = null;
-		sGame.playB = null;
+		sGame.playA = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+		sGame.playB = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 		sGame.turn = 0;
 		sGame.boatA = boatA;
 		sGame.boatB = boatB;
